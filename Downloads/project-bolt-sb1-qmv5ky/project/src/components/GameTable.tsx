@@ -10,7 +10,7 @@ export function GameTable() {
 
   // Group rounds by sets
   const roundSets = rounds.reduce((sets, round) => {
-    const setIndex = Math.floor((round.roundNumber - 1) / 5);
+    const setIndex = Math.floor((round.roundNumber - 1) / 4);
     if (!sets[setIndex]) {
       sets[setIndex] = [];
     }
@@ -52,7 +52,7 @@ export function GameTable() {
                   <div className="space-y-4">
                     {set.map((round) => (
                       <div key={round.id} className="bg-gray-700/30 rounded-lg p-4">
-                        <h4 className="font-medium mb-2">Round {(round.roundNumber - 1) % 5 + 1}</h4>
+                        <h4 className="font-medium mb-2">Round {(round.roundNumber - 1) % 4 + 1}</h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <h5 className="text-sm text-gray-400 mb-1">Bets:</h5>

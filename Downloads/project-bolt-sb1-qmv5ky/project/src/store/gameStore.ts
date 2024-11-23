@@ -47,7 +47,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   startGame: () => set({ gameStarted: true }),
   addRound: (round) => set((state) => {
     const newCurrentRound = state.currentRound + 1;
-    const isSetComplete = newCurrentRound % 5 === 0 || get().hasAllInPlayer();
+    const isSetComplete = newCurrentRound % 4 === 0 || get().hasAllInPlayer();
     const newRound = { ...round, isSetComplete };
     
     return {

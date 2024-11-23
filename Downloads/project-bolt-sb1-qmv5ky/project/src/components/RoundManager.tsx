@@ -6,8 +6,8 @@ export function RoundManager() {
   const [bets, setBets] = useState<{ [key: string]: number }>({});
   const [winners, setWinners] = useState<string[]>([]);
 
-  const roundInSet = (currentRound % 5) + 1;
-  const isLastRoundInSet = roundInSet === 5 || hasAllInPlayer();
+  const roundInSet = (currentRound % 4) + 1;
+  const isLastRoundInSet = roundInSet === 4 || hasAllInPlayer();
 
   const handleBetChange = (playerId: string, amount: string) => {
     const betAmount = Number(amount);
@@ -89,7 +89,7 @@ export function RoundManager() {
   return (
     <div className="bg-gray-800/50 rounded-lg p-6 shadow-xl">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Set {currentSet} - Round {roundInSet}/5</h2>
+        <h2 className="text-xl font-semibold">Set {currentSet} - Round {roundInSet}/4</h2>
         {hasAllInPlayer() && (
           <span className="text-red-400 text-sm">All-in detected! Set will end after this round.</span>
         )}
