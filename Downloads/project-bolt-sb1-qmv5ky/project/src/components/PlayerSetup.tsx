@@ -6,19 +6,19 @@ type Player = {
   id: string;
   name: string;
   balance: number;
-  isAllIn: boolean
+  isAllIn: boolean;
 };
 
 export function PlayerSetup() {
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: '', balance: 0,isAllIn: false },
-    { id: '2', name: '', balance: 0,isAllIn: false },
+    { id: '1', name: '', balance: 0, isAllIn: false },
+    { id: '2', name: '', balance: 0, isAllIn: false },
   ]);
 
   const { addPlayers, startGame } = useGameStore();
 
   const addPlayer = () => {
-    setPlayers([...players, { id: String(players.length + 1), name: '', balance: 0 ,isAllIn: false}]);
+    setPlayers([...players, { id: String(players.length + 1), name: '', balance: 0, isAllIn: false }]);
   };
 
   const removePlayer = (id: string) => {
@@ -38,7 +38,7 @@ export function PlayerSetup() {
   const handleStartGame = () => {
     const validPlayers = players.every((p) => p.name && p.balance > 0);
     if (validPlayers) {
-      addPlayers(players.map((p) => ({ ...p, initialBalance: p.balance , isAllIn: false})));
+      addPlayers(players.map((p) => ({ ...p, initialBalance: p.balance })));
       startGame();
     } else {
       alert('All players must have a name and a balance greater than 0.');
@@ -62,7 +62,7 @@ export function PlayerSetup() {
               type="number"
               placeholder="Initial Balance"
               value={player.balance || ''}
-              onChange={(e) => updatePlayer(player.id, 'balance', Number(e.target.value))}
+              onChange={(e) => updatePlayer(player.id, 'balance', e.target.value)}
               className="bg-gray-700 rounded px-3 py-2 w-32"
             />
             <button
