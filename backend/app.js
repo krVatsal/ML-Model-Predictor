@@ -8,6 +8,7 @@ import passport from './middlewares/passport-config.js';
 import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js'; 
+import cors from 'cors';
 dotenv.config();
 
 
@@ -15,7 +16,11 @@ let app = express();
 dbConnect();
 // authentication system
 //initializePassport(passport,process.env.GOOGLE_CLIENT_ID,process.env.GOOGLE_CLIENT_SECRET);
-
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+    // origin: "http://localhost:3000",
+    credentials: true,
+}));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -40,38 +45,11 @@ app.use((req, res, next) => {
 });
 
 
-app.listen('3000',()=>{
+app.listen('5217',()=>{
     console.log("app listening ");
-
 })
 // Routes
 app.use('/auth', authRoutes);
-
-app.get('/',async(req,res)=>{
-    res.send("hello there ...");
-    // let newUser=new User({
-    //     firstName:"divyansh",
-    //     lastName:"singh",
-    //     email:"divyanshsingh@gmail.com",
-    //     password:"DFGFH"
-    // });
-    
-    // await newUser.save();
-    // console.log(req);
-})
-
-app.post('/',async(req,res)=>{
-    res.send("hello there ...");
-    // let newUser=new User({
-    //     firstName:"divyansh",
-    //     lastName:"singh",
-    //     email:"divyanshsingh@gmail.com",
-    //     password:"DFGFH"
-    // });
-    
-    // await newUser.save();
-    // console.log(req);
-})
 
 
 export default app ;

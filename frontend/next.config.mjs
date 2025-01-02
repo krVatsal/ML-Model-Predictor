@@ -1,6 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-};
+  reactStrictMode: false,
+  async rewrites() {
+    return [
+      
+      {
+        source: '/auth/:path*',
+        destination: 'http://localhost:5217/:path*',
+      },
 
-export default nextConfig;
+    ]
+  },
+    experimental: {
+      serverActions: true,
+      serverComponentsExternalPackages:["mongoose"],
+    }
+  }
+  
+  export default nextConfig;

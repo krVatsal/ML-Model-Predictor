@@ -10,8 +10,8 @@ router.get('/github', passport.authenticate('github'));
 router.get(
   '/github/callback',
   passport.authenticate('github', {
-    failureRedirect: '/login', // Redirect here if authentication fails
-    successRedirect: '/',      // Redirect here if authentication succeeds
+    failureRedirect: 'http://localhost:3000/', // Redirect here if authentication fails
+    successRedirect: 'http://localhost:3000/',      // Redirect here if authentication succeeds
   })
 );
 
@@ -23,6 +23,14 @@ router.get('/logout', (req, res) => {
     }
     res.redirect('/'); // Redirect to the home page or login page after logout
   });
+});
+
+router.get('/status', (req, res) => {
+  if (req.isAuthenticated()) {
+      return res.status(200).json({ loggedIn: true, user: req.user });
+      
+  }
+  res.status(401).json({ loggedIn: false });
 });
 
 export default router;
