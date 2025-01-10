@@ -21,8 +21,11 @@ router.get('/logout', (req, res) => {
     if (err) {
       return res.status(500).send(err.message); // Handle logout errors
     }
-    res.redirect('/'); // Redirect to the home page or login page after logout
+
   });
+  console.log("logged out")
+  // res.redirect('http://localhost:3000/'); // Redirect to the home page or login page after logout
+  return res.status(200).json({ message: 'Logged out' });
 });
 
 router.get('/status', (req, res) => {

@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'CodeGen AI - AI Code Generation',
+  title: 'Chanet AI - AI Code Generation',
   description: 'Generate code using AI with custom prompts and training data',
 };
 
