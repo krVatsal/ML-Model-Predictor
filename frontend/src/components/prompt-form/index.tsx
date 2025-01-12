@@ -4,15 +4,44 @@ import { SendHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TextArea } from '../ui/text-area';
+import { useNavigate } from 'react-router-dom';
+
 
 export function PromptForm() {
   const router = useRouter();
+  const navigate = useNavigate();
+
   const [prompt, setPrompt] = useState('');
   const [trainingData, setTrainingData] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
+    console.log("handleSubmit hit ...");
     e.preventDefault();
-    router.push('/generate');
+
+    console.log("Prompt:", prompt);
+    console.log("Training Data:", trainingData);
+    try {
+      const response = await fetch('http://localhost/gen/prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          trainingData,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch data');
+
+      const data = await response.json();
+
+      // Navigate to /generate and pass data as state
+      navigate('/generate', { state: { data } });
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+    }
+    //router.push('/generate');
   };
 
   return (

@@ -1,4 +1,4 @@
-import { PromptForm } from '@/components/prompt-form';
+import { PromptForm } from '@/components/PromptForm';
 
 export default function Home() {
   return (

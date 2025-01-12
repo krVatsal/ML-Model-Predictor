@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getSystemPrompt, CONTINUE_PROMPT } from './utils/prompt.js';
+import { getSystemPrompt, CONTINUE_PROMPT } from '../utils/prompt.js';
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -8,8 +8,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 const genResponse=asyncHandler(async(req,res)=>{
-  
-  const userPrompt = "Write the code for a ml model to predict if user will buy certain thing or not";
+  console.log("gemini api hit .....");
+  //const userPrompt = "Write the code for a ml model to predict if user will buy certain thing or not"
+  const userPrompt = req.prompt;
   try {
     const prompt = `${getSystemPrompt}\n${CONTINUE_PROMPT}\n${userPrompt}`;
     const result = await model.generateContent(prompt);

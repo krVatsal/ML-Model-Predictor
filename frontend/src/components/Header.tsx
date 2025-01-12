@@ -37,6 +37,7 @@ export default function Header() {
   // Logout handler
   const handleLogout = async () => {
     try {
+      console.log("Attempting to logout...");
       const response = await fetch("http://localhost:5217/auth/logout", {
         method: "GET",
         credentials: "include",
@@ -59,8 +60,9 @@ export default function Header() {
       <div className="container justify-between mx-auto px-4 py-4 flex items-center">
         <div className="flex items-center gap-2">
           <Code2 className="w-8 h-8 text-blue-600" />
-          {/* <span className="text-xl font-bold">CodeGen AI</span> */}
+          <span className="text-xl font-bold">CodeGen AI</span>
         </div>
+        <a href="http://localhost:5217/check">donenn</a>
         {!isLoggedIn ? (
           <a href="http://localhost:5217/auth/github">
             <button
@@ -85,7 +87,7 @@ export default function Header() {
           </a>
         ) : (
           <img
-            src={user.avatarUrl}
+            src={user.avatarUrl }
             alt="User Avatar"
             className="w-8 h-8 rounded-full cursor-pointer"
             onClick={() => {

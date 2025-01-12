@@ -1,12 +1,17 @@
 'use client';
+import React, { useState, useEffect } from 'react';
+import { CheckpointList } from './Checkpoint/CheckpointList';
+import { CodeDisplay } from './CodeDisplay/CodeDisplay';
+import { ChatInput } from './ChatInput/ChatInput';
+import type { CheckpointItem } from './Checkpoint/Checkpoint';
+//import { useLocation } from 'react-router-dom';
 
-import { useState } from 'react';
-import { CheckpointList } from './checkpoint-list';
-import { CodeDisplay } from './code-display';
-import { ChatInput } from './chat-input';
-import type { CheckpointItem } from '@/types';
+function onContinueConversation() {
+  // Define conversation continuation logic here
+}
 
-export function ResponsePage() {
+export default function ResponsePage() {
+ // const location = typeof window !== 'undefined' ? useLocation() : { state: null };
   const [checkpoints] = useState<CheckpointItem[]>([
     { id: 1, text: 'Analyzing prompt', completed: true },
     { id: 2, text: 'Generating code structure', completed: true },
@@ -14,13 +19,20 @@ export function ResponsePage() {
     { id: 4, text: 'Optimizing code', completed: false },
   ]);
 
-  const [generatedCode] = useState(`// Generated code will appear here
-function example() {
-  console.log("Hello, World!");
-}`);
+  const [generatedCode, setGeneratedCode] = useState(`// Generated code will appear here`);
 
-  const handleContinueConversation = (message: string) => {
-    console.log('Continuing conversation with:', message);
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined' && location?.state?.data) {
+  //     const apiData = location.state.data;
+  //     setGeneratedCode(apiData?.data || '// Default generated code');
+  //   }
+  // }, [location]);
+
+  const handleOpenColab = () => {
+    // if (typeof window !== 'undefined') {
+    //   const colabUrl = 'https://colab.research.google.com/drive/#create=true';
+    //   window.open(colabUrl, '_blank');
+    // }
   };
 
   return (
@@ -28,7 +40,10 @@ function example() {
       <CheckpointList checkpoints={checkpoints} />
       <div className="flex flex-col h-full">
         <CodeDisplay code={generatedCode} />
-        <ChatInput onSendMessage={handleContinueConversation} />
+        <ChatInput 
+          onSendMessage={onContinueConversation}
+          onOpenColab={handleOpenColab}
+        />
       </div>
     </div>
   );

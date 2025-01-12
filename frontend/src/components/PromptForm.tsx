@@ -1,50 +1,74 @@
-import React, { useState } from 'react';
+'use client';
+
 import { SendHorizontal } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { TextArea } from './ui/text-area';
+import { useNavigate } from 'react-router-dom';
 
-interface PromptFormProps {
-  onSubmit: (prompt: string, trainingData: string) => void;
-}
 
-export default function PromptForm({ onSubmit }: PromptFormProps) {
+export function PromptForm() {
+  console.log("prompt form active ...");
+  const router = useRouter();
+  const navigate = useNavigate();
+
   const [prompt, setPrompt] = useState('');
   const [trainingData, setTrainingData] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
+    console.log("handleSubmit hit ...");
     e.preventDefault();
-    onSubmit(prompt, trainingData);
+
+    console.log("Prompt:", prompt);
+    console.log("Training Data:", trainingData);
+    try {
+      const response = await fetch('http://localhost:5217/gen/prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          trainingData,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch data');
+
+      const data = await response.json();
+      console.log(data);
+      // Navigate to /generate and pass data as state
+      navigate('/generate', { state: { data } });
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+    }
+    //router.push('/generate');
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
-      <div>
-        <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-          Enter your prompt
-        </label>
-        <textarea
-          id="prompt"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Describe what you want to create..."
-        />
-      </div>
+      <TextArea
+        id="prompt"
+        label="Enter your prompt"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Describe what you want to create..."
+        className="h-32"
+      />
 
-      <div>
-        <label htmlFor="training" className="block text-sm font-medium text-gray-700 mb-2">
-          Training Data (Optional)
-        </label>
-        <textarea
-          id="training"
-          value={trainingData}
-          onChange={(e) => setTrainingData(e.target.value)}
-          className="w-full h-48 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Add sample training data here..."
-        />
-      </div>
+      <TextArea
+        id="training"
+        label="Training Data (Optiojjjjjjjjjjjnal)"
+        value={trainingData}
+        onChange={(e) => setTrainingData(e.target.value)}
+        placeholder="Add sample training data here..fucnk yyyyu."
+        className="h-48"
+      />
 
       <button
         type="submit"
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 
+                 rounded-lg hover:bg-blue-700 transition-colors"
       >
         Generate Code
         <SendHorizontal className="w-5 h-5" />

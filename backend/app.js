@@ -8,7 +8,9 @@ import passport from './middlewares/passport-config.js';
 import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js'; 
+import genRoutes from './routes/generate.js';
 import cors from 'cors';
+import History from './models/history.js';
 dotenv.config();
 
 
@@ -44,12 +46,26 @@ app.use((req, res, next) => {
   next();
 });
 
-
 app.listen('5217',()=>{
     console.log("app listening ");
+    
 })
 // Routes
 app.use('/auth', authRoutes);
+app.use('/gen',genRoutes);
 
+
+app.use('/check',async (req,res)=>{
+     const text ="regression model";
+     const user = req.user._id;
+    //  console.log(req);
+     const prompt = new History({
+          author :req.user._id,
+          prompt : "line follower",
+     });
+     await prompt.save();
+
+     console.log("done done ");
+})
 
 export default app ;

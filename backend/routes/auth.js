@@ -10,8 +10,8 @@ router.get('/github', passport.authenticate('github'));
 router.get(
   '/github/callback',
   passport.authenticate('github', {
-    failureRedirect: 'http://localhost:3000/', // Redirect here if authentication fails
-    successRedirect: 'http://localhost:3000/',      // Redirect here if authentication succeeds
+    failureRedirect: 'http://localhost:3000', // Redirect here if authentication fails
+    successRedirect: 'http://localhost:3000',      // Redirect here if authentication succeeds
   })
 );
 
@@ -19,9 +19,12 @@ router.get(
 router.get('/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
+      console.log("attkkk");
       return res.status(500).send(err.message); // Handle logout errors
     }
-    res.redirect('/'); // Redirect to the home page or login page after logout
+    // res.header('Access-Control-Allow-Origin', 'http://localhost:3000'); // Allow frontend origin
+    // res.header('Access-Control-Allow-Credentials', 'true'); // If needed
+    res.redirect('http://localhost:3000'); // Redirect to the home page or login page after logout
   });
 });
 

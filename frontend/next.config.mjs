@@ -4,10 +4,12 @@ const nextConfig = {
   async rewrites() {
     return [
       
+  
       {
         source: '/auth/:path*',
         destination: 'http://localhost:5217/:path*',
       },
+    
 
     ]
   },
