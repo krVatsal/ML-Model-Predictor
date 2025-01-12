@@ -9,10 +9,53 @@ export function PromptForm() {
   const router = useRouter();
   const [prompt, setPrompt] = useState('');
   const [trainingData, setTrainingData] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/generate');
+    setError(''); // Clear previous errors
+
+    // Validate JSON format
+    let parsedTrainingData = null;
+    if (trainingData.trim()) {
+      try {
+        parsedTrainingData = JSON.parse(trainingData);
+      } catch (err) {
+        setError('Training Data must be valid JSON.');
+        return;
+      }
+    }
+
+    // Prepare data to send
+    const requestData = {
+      prompt,
+      ...(parsedTrainingData && { trainingData: parsedTrainingData }),
+    };
+
+    console.log('Form Data:', requestData); // Debugging purposes
+
+    try {
+      // Send data to your API route
+      const response = await fetch('/api/submit-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Response:', result);
+        router.push('/generate'); // Navigate to the next page
+      } else {
+        const errorData = await response.json();
+        setError(`Error: ${errorData.message || 'Failed to submit data.'}`);
+      }
+    } catch (err) {
+      console.error('Error submitting data:', err);
+      setError('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
@@ -28,12 +71,14 @@ export function PromptForm() {
 
       <TextArea
         id="training"
-        label="Training Data (Optional)"
+        label=" Sample Training Data (Optional, must be JSON)"
         value={trainingData}
         onChange={(e) => setTrainingData(e.target.value)}
-        placeholder="Add sample training data here..."
+        placeholder="Add valid JSON here..."
         className="h-48"
       />
+
+      {error && <p className="text-red-600">{error}</p>}
 
       <button
         type="submit"

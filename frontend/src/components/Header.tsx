@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Code2 } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 export default function Header() {
+  const router= useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -36,16 +37,18 @@ export default function Header() {
 
   // Logout handler
   const handleLogout = async () => {
+    
     try {
       console.log("Attempting to logout...");
       const response = await fetch("http://localhost:5217/auth/logout", {
         method: "GET",
         credentials: "include",
       });
-      if (response.ok) {
+      if (response.status==200) {
         setIsLoggedIn(false);
         setUser(null);
         alert("Successfully logged out!");
+        router.push('/')
       } else {
         alert("Failed to log out. Please try again.");
       }
@@ -87,7 +90,7 @@ export default function Header() {
           </a>
         ) : (
           <img
-            src={user.avatarUrl }
+            src={user?.avatarUrl}
             alt="User Avatar"
             className="w-8 h-8 rounded-full cursor-pointer"
             onClick={() => {

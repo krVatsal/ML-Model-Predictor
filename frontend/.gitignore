@@ -6,12 +6,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.next/
 node_modules
 dist
 dist-ssr
 *.local
+.next
 .next/
+.next/*
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +23,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
