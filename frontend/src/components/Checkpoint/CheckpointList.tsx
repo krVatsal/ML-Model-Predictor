@@ -7,7 +7,7 @@ interface CheckpointListProps {
 
 export function CheckpointList({ checkpoints }: CheckpointListProps) {
   return (
-    <div className="border-r p-4 bg-gray-50">
+    <div className="border-r p-4 bg-gray-950">
       <h2 className="font-semibold mb-4">Generation Progress</h2>
       <div className="space-y-4">
         {checkpoints.map((checkpoint) => (

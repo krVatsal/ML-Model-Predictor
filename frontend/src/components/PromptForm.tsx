@@ -4,45 +4,59 @@ import { SendHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TextArea } from './ui/text-area';
-import { useNavigate } from 'react-router-dom';
-
 
 export function PromptForm() {
-  console.log("prompt form active ...");
-  const router = useRouter();
-  const navigate = useNavigate();
+  console.log("Prompt form active ...");
+  const router = useRouter(); // Using Next.js router
 
   const [prompt, setPrompt] = useState('');
   const [trainingData, setTrainingData] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = async(e: React.FormEvent) => {
-    console.log("handleSubmit hit ...");
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
 
-    console.log("Prompt:", prompt);
-    console.log("Training Data:", trainingData);
+    // Validate JSON format
+    let parsedTrainingData = null;
+    if (trainingData.trim()) {
+      try {
+        parsedTrainingData = JSON.parse(trainingData);
+      } catch (err) {
+        setError('Training Data must be valid JSON.');
+        return;
+      }
+    }
+
+    // Prepare data to send
+    const requestData = {
+      prompt,
+      ...(parsedTrainingData && { trainingData: parsedTrainingData }),
+    };
+
+    console.log('Form Data:', requestData); // Debugging purposes
     try {
       const response = await fetch('http://localhost:5217/gen/prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt,
-          trainingData,
-        }),
+        body: JSON.stringify(requestData),
       });
 
-      if (!response.ok) throw new Error('Failed to fetch data');
-
-      const data = await response.json();
-      console.log(data);
-      // Navigate to /generate and pass data as state
-      navigate('/generate', { state: { data } });
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        // Navigate to /generate and pass data as query parameters
+        router.push(`/generate?data=${encodeURIComponent(JSON.stringify(data))}`);
+      } else {
+        const errorData = await response.json();
+        setError(`Error: ${errorData.message || 'Failed to submit data.'}`);
+      }
     } catch (error) {
       console.error('Error submitting the form:', error);
+      setError('An unexpected error occurred. Please try again later.');
     }
-    //router.push('/generate');
   };
 
   return (
@@ -58,17 +72,18 @@ export function PromptForm() {
 
       <TextArea
         id="training"
-        label="Training Data (Optiojjjjjjjjjjjnal)"
+        label="Sample Training Data (Optional, must be JSON)"
         value={trainingData}
         onChange={(e) => setTrainingData(e.target.value)}
-        placeholder="Add sample training data here..fucnk yyyyu."
+        placeholder="Add valid JSON here..."
         className="h-48"
       />
 
+      {error && <p className="text-red-600">{error}</p>}
+
       <button
         type="submit"
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 
-                 rounded-lg hover:bg-blue-700 transition-colors"
+        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
       >
         Generate Code
         <SendHorizontal className="w-5 h-5" />

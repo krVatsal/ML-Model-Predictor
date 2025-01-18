@@ -17,7 +17,7 @@ export function ChatInput({ onSendMessage, onOpenColab }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-gray-800 p-4 bg-gray-200">
+    <div className="border-t border-gray-800 p-4 bg-gray-950">
       <div className="flex gap-4">
         <input
           type="text"
@@ -34,7 +34,7 @@ export function ChatInput({ onSendMessage, onOpenColab }: ChatInputProps) {
         </button>
         <button
           onClick={onOpenColab}
-          className="flex items-center gap-2 border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 border border-gray-800 px-6 py-2 rounded-lg bg-[#24292F] hover:bg-[#24293F] transition-colors"
         >
           Open in Colab
           <ExternalLink className="w-4 h-4" />

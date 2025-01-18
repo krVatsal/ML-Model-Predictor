@@ -19,7 +19,7 @@ export function Checkpoint({ checkpoint }: CheckpointProps) {
       ) : (
         <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
       )}
-      <span className={checkpoint.completed ? 'text-gray-700' : 'text-gray-500'}>
+      <span className={checkpoint.completed ? 'text-gray-450' : 'text-gray-500'}>
         {checkpoint.text}
       </span>
     </div>

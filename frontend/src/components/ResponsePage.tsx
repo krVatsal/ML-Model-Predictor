@@ -22,7 +22,7 @@ export default function ResponsePage({ onContinueConversation }: ResponsePagePro
   return (
     <div className="grid grid-cols-[300px_1fr] h-[calc(100vh-73px)]">
       {/* Left sidebar */}
-      <div className="border-r p-4 bg-gray-50">
+      <div className="border-r p-4 bg-gray-950">
         <h2 className="font-semibold mb-4">Generation Progress</h2>
         <div className="space-y-4">
           {checkpoints.map((checkpoint) => (

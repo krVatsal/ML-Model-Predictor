@@ -65,7 +65,7 @@ export default function Header() {
           <Code2 className="w-8 h-8 text-blue-600" />
           <span className="text-xl font-bold">CodeGen AI</span>
         </div>
-        <a href="http://localhost:5217/check">donenn</a>
+        {/* <a href="http://localhost:5217/check">donenn</a> */}
         {!isLoggedIn ? (
           <a href="http://localhost:5217/auth/github">
             <button
