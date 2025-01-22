@@ -1,9 +1,10 @@
 import express from 'express';
-import passport from '../middlewares/passport-config.js'; // Path to your configured passport file
 import { isVerified } from '../middlewares/auth.js';
-import { genResponse } from '../controller/gemini.controller.js';
+import { genResponse,extractKeywordsAndKaggleApiHit } from '../controller/gemini.controller.js';
 const router = express.Router();
 
-router.post('/prompt',genResponse);
+router.post('/prompt',genResponse,isVerified);
+router.get("/getRecommendation", extractKeywordsAndKaggleApiHit, isVerified)
+
 
 export default router ;
