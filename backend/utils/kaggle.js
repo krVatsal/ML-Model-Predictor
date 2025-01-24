@@ -33,6 +33,7 @@ export async function displayDatasetOptions(keyword) {
     if (datasets && datasets.length > 0) {
       console.log(`Found ${datasets.length} datasets for "${keyword}":`);
       // console.log(datasets)
+      
       datasets=datasets.slice(0,5)
       datasets.forEach((dataset, index) => {
         console.log(`${index + 1}. ${dataset.title} by ${dataset.ref}- url ${dataset.url}`);

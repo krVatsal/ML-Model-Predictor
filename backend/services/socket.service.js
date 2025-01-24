@@ -53,7 +53,6 @@ Example Output:
 Return only one keyword that best represents the domain of the task."
 Here is the prompt:
 ${data.userPrompt}`;
-console.log(keywordPrompt)
           const result = await this.model.generateContent(keywordPrompt);
           const keywords = result.response.candidates[0].content.parts[0].text;
           // console.log(result)
@@ -81,13 +80,25 @@ console.log(keywordPrompt)
             ? `${systemPrompt}\n${continuePrompt}\n${userPrompt}\n${finalTrainingData}`
             : `${systemPrompt}\n${continuePrompt}\n${userPrompt}`;
 
-          const code = await this.model.generateContent(finalPrompt);
-          const response = code.response.candidates[0].content.parts[0].text;
-
-          // Emit response back to the client
-          socket.emit('generate-response-result', {
-            response,datasets
-          });
+            const streamingResult = await this.model.generateContentStream(finalPrompt);
+            let fullResponse = '';
+            for await (const chunk of streamingResult.stream) {
+              const chunkText = chunk.text();
+              fullResponse += chunkText;
+              
+              // Emit more meaningful chunks
+              socket.emit('generate-response-chunk', {
+                chunk: chunkText,
+                progress: fullResponse // Send the cumulative progress
+              });
+            }
+            
+            // After streaming is complete
+            socket.emit('generate-response-result', {
+              response: fullResponse,
+              datasets,
+              isComplete: true
+            });
         } catch (error) {
           socket.emit('error', {
             message: `Response generation failed: ${error.message}`,

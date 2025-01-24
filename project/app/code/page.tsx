@@ -15,28 +15,36 @@ export default function CodePage() {
   const [code, setCode] = useState('// Generated code will appear here')
   const [datasets, setDatasets] = useState([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const newSocket = io('http://localhost:5217', {
       transports: ['websocket']
     });
-
+  
     newSocket.on('connect', () => {
       console.log('Socket connected');
     });
-
+  
+    newSocket.on('generate-response-chunk', (data) => {
+      // Use the cumulative progress to update the code
+      setCode(data.progress);
+    })
+  
     newSocket.on('generate-response-result', (data) => {
-      console.log("1")
+      console.log(data)
+      setIsLoading(false);
       setCode(data.response);
-      setDatasets(data.datasets || []);
+      setDatasets(data.datasets.data || [])
     });
-
+  
     newSocket.on('error', (errorData) => {
+      setIsLoading(false);
       setError(`Socket Error: ${errorData.message}`);
     });
-
+  
     setSocket(newSocket);
-
+  
     return () => {
       newSocket.disconnect();
     };
@@ -46,6 +54,7 @@ export default function CodePage() {
     if(!prompt.trim()) return;
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     // Validate JSON format for training data
     let parsedTrainingData = null;
@@ -64,7 +73,6 @@ export default function CodePage() {
       trainingData: parsedTrainingData
     });
   };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
@@ -78,7 +86,7 @@ export default function CodePage() {
           </div>
         </div>
       </header>
-
+  
       <main className="flex-1 container px-4 py-4 grid grid-rows-[auto,1fr] gap-4">
         <div className="flex gap-2">
           <Textarea
@@ -88,8 +96,8 @@ export default function CodePage() {
             className="flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit(e)
+                e.preventDefault();
+                handleSubmit(e);
               }
             }}
           />
@@ -100,27 +108,34 @@ export default function CodePage() {
             className="flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit(e)
+                e.preventDefault();
+                handleSubmit(e);
               }
             }}
           />
-          
-          <Button onClick={handleSubmit} className="h-full">
-            <Send className="h-4 w-4" />
+          <Button 
+            onClick={handleSubmit} 
+            className="h-full flex items-center justify-center"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="loader h-4 w-4 border-2 border-t-transparent border-gray-600 rounded-full animate-spin"></div>
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
         {error && <p className="text-red-600">{error}</p>}
-        
+  
         {datasets.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold mb-2">Suggested Datasets:</h3>
             <div className="grid grid-cols-3 gap-2">
               {datasets.map((dataset: any, index) => (
-                <a 
-                  key={index} 
-                  href={dataset.url} 
-                  target="_blank" 
+                <a
+                  key={index}
+                  href={dataset.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="bg-muted p-2 rounded hover:bg-muted/80 transition-colors"
                 >
@@ -130,7 +145,7 @@ export default function CodePage() {
             </div>
           </div>
         )}
-
+  
         <div className="rounded-lg border overflow-hidden">
           <Editor
             height="100%"
@@ -142,11 +157,11 @@ export default function CodePage() {
               fontSize: 14,
               lineNumbers: 'on',
               readOnly: false,
-              wordWrap: 'on'
+              wordWrap: 'on',
             }}
           />
         </div>
       </main>
     </div>
-  )
-}
+  );
+}  
