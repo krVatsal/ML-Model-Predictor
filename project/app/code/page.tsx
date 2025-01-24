@@ -1,26 +1,53 @@
 "use client"
 import { useState, useEffect } from 'react'
+import io from 'socket.io-client'
 import Link from 'next/link'
 import { Bot, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import Editor from "@monaco-editor/react"
-import { useRouter } from 'next/navigation'
+
 export default function CodePage() {
-  const router= useRouter()
+  const [socket, setSocket] = useState<any>(null);
   const [trainingData, setTrainingData] = useState('');
   const [prompt, setPrompt] = useState('')
   const [code, setCode] = useState('// Generated code will appear here')
+  const [datasets, setDatasets] = useState([]);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    if(prompt.trim()==null) return
-    e.preventDefault();
-    setError(''); // Clear previous errors
+  useEffect(() => {
+    const newSocket = io('http://localhost:5217', {
+      transports: ['websocket']
+    });
 
-    // Validate JSON format
+    newSocket.on('connect', () => {
+      console.log('Socket connected');
+    });
+
+    newSocket.on('generate-response-result', (data) => {
+      console.log("1")
+      setCode(data.response);
+      setDatasets(data.datasets || []);
+    });
+
+    newSocket.on('error', (errorData) => {
+      setError(`Socket Error: ${errorData.message}`);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    if(!prompt.trim()) return;
+    e.preventDefault();
+    setError('');
+
+    // Validate JSON format for training data
     let parsedTrainingData = null;
     if (trainingData.trim()) {
       try {
@@ -31,49 +58,12 @@ export default function CodePage() {
       }
     }
 
-    // Prepare data to send
-    const requestData = {
-      prompt,
-      ...(parsedTrainingData && { trainingData: parsedTrainingData }),
-    };
-
-    console.log('Form Data:', requestData); // Debugging purposes
-    try {
-      const response = await fetch('http://localhost:5217/gen/prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        // Navigate to /generate and pass data as query parameters
-        router.push(`/code?data=${encodeURIComponent(JSON.stringify(data))}`);
-      } else {
-        const errorData = await response.json();
-        setError(`Error: ${errorData.message || 'Failed to submit data.'}`);
-      }
-    } catch (error) {
-      console.error('Error submitting the form:', error);
-      setError('An unexpected error occurred. Please try again later.');
-    }
+    // Emit socket event
+    socket.emit('generate-response', {
+      userPrompt: prompt,
+      trainingData: parsedTrainingData
+    });
   };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const data = params.get('data');
-      try {
-        const parsedData = data ? JSON.parse(decodeURIComponent(data)) : null;
-        setCode(parsedData?.data || '// Generated code will appear here');
-      } catch (error) {
-        console.error('Error parsing query data:', error);
-      }
-    }
-  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -121,6 +111,26 @@ export default function CodePage() {
           </Button>
         </div>
         {error && <p className="text-red-600">{error}</p>}
+        
+        {datasets.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Suggested Datasets:</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {datasets.map((dataset: any, index) => (
+                <a 
+                  key={index} 
+                  href={dataset.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-muted p-2 rounded hover:bg-muted/80 transition-colors"
+                >
+                  {dataset.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border overflow-hidden">
           <Editor
             height="100%"

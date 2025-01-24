@@ -2,7 +2,6 @@ import express from 'express';
 import session from 'express-session';
 import dbConnect from './database/connect.js';
 import User from './models/user.js';
-//import passport from 'passport';
 import flash from 'connect-flash';
 import passport from './middlewares/passport-config.js';
 import MongoStore from 'connect-mongo';
@@ -11,19 +10,21 @@ import authRoutes from './routes/auth.js';
 import genRoutes from './routes/generate.js';
 import cors from 'cors';
 import History from './models/history.js';
+import http from 'http';
+import { initSocketHandler } from './controller/gemini.controller.js';
 dotenv.config();
 
-
 let app = express();
+const server = http.createServer(app);
+initSocketHandler(server);
+
 dbConnect();
-// authentication system
-//initializePassport(passport,process.env.GOOGLE_CLIENT_ID,process.env.GOOGLE_CLIENT_SECRET);
+
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
-    // origin: "http://localhost:3000",
     credentials: true,
 }));
-
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
     session({
@@ -46,26 +47,29 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen('5217',()=>{
-    console.log("app listening ");
-    
-})
+// Replace app.listen with server.listen
+server.listen('5217', () => {
+    console.log("app listening on port 5217");
+});
+
 // Routes
 app.use('/auth', authRoutes);
-app.use('/gen',genRoutes);
+app.use('/gen', genRoutes);
 
+// app.use('/check', async (req, res) => {
+//      try {
+//        const prompt = new History({
+//             author: req.user._id,
+//             prompt: "line follower",
+//        });
+//        await prompt.save();
+//        console.log("done done ");
+//        res.status(200).json({ message: "History saved successfully" });
+//      } catch (error) {
+//        console.error("Error saving history:", error);
+//        res.status(500).json({ message: "Error saving history" });
+//      }
+// }
+// );
 
-app.use('/check',async (req,res)=>{
-     const text ="regression model";
-     const user = req.user._id;
-    //  console.log(req);
-     const prompt = new History({
-          author :req.user._id,
-          prompt : "line follower",
-     });
-     await prompt.save();
-
-     console.log("done done ");
-})
-
-export default app ;
+export default app;

@@ -29,17 +29,18 @@ export async function searchDatasets(keyword) {
 // Function to display datasets based on a keyword
 export async function displayDatasetOptions(keyword) {
   try {
-    const datasets = await searchDatasets(keyword);
-    console.log(datasets)
+    let datasets = await searchDatasets(keyword);
     if (datasets && datasets.length > 0) {
       console.log(`Found ${datasets.length} datasets for "${keyword}":`);
-      datasets.slice(0,5).forEach((dataset, index) => {
+      // console.log(datasets)
+      datasets=datasets.slice(0,5)
+      datasets.forEach((dataset, index) => {
         console.log(`${index + 1}. ${dataset.title} by ${dataset.ref}- url ${dataset.url}`);
       });
     } else {
       console.log(`No datasets found for "${keyword}".`);
     }
-    return new ApiResponse(200, 'Datasets recommended successfully')
+    return new ApiResponse(200,datasets, 'Datasets recommended successfully')
   } catch (error) {
     console.error('Error displaying dataset options:', error);
     return new ApiError(500, "Failed to recommend dataset")
