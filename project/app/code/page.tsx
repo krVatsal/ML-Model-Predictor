@@ -10,6 +10,9 @@ import Editor from "@monaco-editor/react"
 import { useToast } from "@/hooks/use-toast"
 import { ToastAction } from "@/components/ui/toast"
 import MonacoEditorWithIpynbDownload from '@/components/Editor'
+import { get } from 'node:http'
+import { useRouter } from 'next/navigation'
+import LoadingSkeleton from '@/components/skeleton'
 interface ChatMessage {
   type: 'user' | 'assistant'
   content: string
@@ -28,8 +31,50 @@ export default function CodePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [initiated, setInitiated] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [auth, isAuth] =useState(false)
+  const [skeleton, setSkeleton]= useState(true)
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+const router= useRouter()
+useEffect(() => {
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('http://localhost:5217/auth/status', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
 
+      if (!response.ok) {
+        router.push('/');
+        throw new Error('Not authenticated');
+      }
+
+      const data = await response.json();
+      isAuth(true);
+      setSkeleton(false);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to verify authentication status. Please try again.",
+        duration: 3000,
+      });
+      router.push('/');
+    }
+  };
+
+  // Call the auth check function
+  checkAuth();
+
+  // Add a cleanup function
+  return () => {
+    // Cleanup if needed
+  };
+}, [router]); // Add router to dependency array
+  
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -101,7 +146,12 @@ export default function CodePage() {
   
     newSocket.on('error', (errorData) => {
       setIsLoading(false);
-      setError(`Socket Error: ${errorData.message}`);
+              toast({
+          variant: "destructive",
+          title: "Error",
+          description: errorData.message, 
+          duration: 3000,
+        });
     });
   
     setSocket(newSocket);
@@ -154,7 +204,12 @@ export default function CodePage() {
       setInitiated(true);
     } catch (err) {
       console.error('Error parsing Gemini response:', err);
-      setError('Error parsing the response');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error parsing the response", 
+        duration: 3000,
+      });
     }
   };
 
@@ -193,6 +248,11 @@ export default function CodePage() {
     });
   };
 
+  if(skeleton){
+    return(
+      <LoadingSkeleton/>
+    )
+  }
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
@@ -246,7 +306,6 @@ export default function CodePage() {
               )}
             </Button>
           </div>
-          {error && <p className="text-red-600">{error}</p>}
 
           <div className="h-full rounded-lg border overflow-hidden">
           <MonacoEditorWithIpynbDownload code={displayedCode} />
