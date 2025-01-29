@@ -30,7 +30,7 @@ export default function PromptPage() {
         <div className="container flex h-16 items-center px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Bot className="h-6 w-6" />
-            <span className="text-lg font-bold">AI Assistant</span>
+            <span className="text-lg font-bold">Chanet</span>
           </Link>
           <div className="ml-auto flex items-center space-x-4">
             <ThemeToggle />

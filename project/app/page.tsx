@@ -67,7 +67,7 @@ export default function Home() {
             Your Coding Companion
           </h1>
           <p className="mt-4 text-muted-foreground sm:text-xl">
-            Generate code instantly with AI assistance
+            Generate code instantly with Chanet
           </p>
           <div className="mt-8">
             {isLoggedIn ? (

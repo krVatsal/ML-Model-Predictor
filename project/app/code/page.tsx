@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import Editor from "@monaco-editor/react"
 import { useToast } from "@/hooks/use-toast"
 import { ToastAction } from "@/components/ui/toast"
+import MonacoEditorWithIpynbDownload from '@/components/Editor'
 interface ChatMessage {
   type: 'user' | 'assistant'
   content: string
@@ -47,7 +48,7 @@ export default function CodePage() {
     setIsLoading(false)
   };
 
-  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 10) => {
+  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 1) => {
     const displaySteps: Array<{title: string, description: string}> = [];
     
     for (const step of steps) {
@@ -198,7 +199,7 @@ export default function CodePage() {
         <div className="container flex h-16 items-center px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Bot className="h-6 w-6" />
-            <span className="text-lg font-bold">AI Assistant</span>
+            <span className="text-lg font-bold">Chanet</span>
           </Link>
           <div className="ml-auto flex items-center space-x-4">
             <ThemeToggle />
@@ -248,19 +249,7 @@ export default function CodePage() {
           {error && <p className="text-red-600">{error}</p>}
 
           <div className="h-full rounded-lg border overflow-hidden">
-            <Editor
-              height="100%"
-              defaultLanguage="python"
-              theme="vs-dark"
-              value={displayedCode}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                readOnly: false,
-                wordWrap: 'on',
-              }}
-            />
+          <MonacoEditorWithIpynbDownload code={displayedCode} />
           </div>
         </main>
 

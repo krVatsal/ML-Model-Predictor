@@ -5,9 +5,9 @@ import { extractKeywordsAndKaggleApiHit, genResponse } from '../controller/gemin
 const router = express.Router();
 
 // Route for getting dataset recommendations
-router.get("/getRecommendation", extractKeywordsAndKaggleApiHit);
+router.get("/getRecommendation", extractKeywordsAndKaggleApiHit)
 
 // Route for generating response
-router.post('/prompt', isVerified, genResponse);
+router.post('/prompt', isVerified, genResponse)
 
 export default router;
