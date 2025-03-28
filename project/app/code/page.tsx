@@ -12,6 +12,8 @@ import { ToastAction } from "@/components/ui/toast"
 import MonacoEditorWithIpynbDownload from '@/components/Editor'
 import { get } from 'node:http'
 import { useRouter } from 'next/navigation'
+import { NavBar } from '@/components/navbar'
+import { useSearchParams } from 'next/navigation';
 import LoadingSkeleton from '@/components/skeleton'
 interface ChatMessage {
   type: 'user' | 'assistant'
@@ -29,13 +31,23 @@ export default function CodePage() {
   const [datasets, setDatasets] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [initiated, setInitiated] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [auth, isAuth] =useState(false)
   const [skeleton, setSkeleton]= useState(true)
+  const [isPrinting, setIsPrinting]= useState(true)
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session');
 const router= useRouter()
+interface HistoryResult {
+  isEmpty: boolean;
+  messages: ChatMessage[];
+  sessionId?: string;
+  title?: string;
+}
 useEffect(() => {
   const checkAuth = async () => {
     try {
@@ -55,6 +67,9 @@ useEffect(() => {
       const data = await response.json();
       isAuth(true);
       setSkeleton(false);
+      // Set userId from localStorage
+      const storedUserId = localStorage.getItem("userId");
+      setUserId(storedUserId);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -66,15 +81,8 @@ useEffect(() => {
     }
   };
 
-  // Call the auth check function
   checkAuth();
-
-  // Add a cleanup function
-  return () => {
-    // Cleanup if needed
-  };
-}, [router]); // Add router to dependency array
-  
+}, [router]);
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -93,7 +101,7 @@ useEffect(() => {
     setIsLoading(false)
   };
 
-  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 1) => {
+  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 2) => {
     const displaySteps: Array<{title: string, description: string}> = [];
     
     for (const step of steps) {
@@ -212,7 +220,24 @@ useEffect(() => {
       });
     }
   };
-
+  useEffect(() => {
+    if (sessionId && socket && userId) {
+      const handleHistoryResult = (data: any) => {
+        if (!data.isEmpty) {
+          setChatMessages(data.messages);
+          setInitiated(true);
+        }
+      };
+  
+      socket.emit('get-history', { userId, sessionId });
+      socket.on('history-result', handleHistoryResult);
+  
+      // Cleanup listener when component unmounts
+      return () => {
+        socket.off('history-result', handleHistoryResult);
+      };
+    }
+  }, [sessionId, socket, userId]);
   const handleSubmit = (e: React.FormEvent) => {
     if(!prompt.trim()) return;
     e.preventDefault();
@@ -222,12 +247,14 @@ useEffect(() => {
     setDisplayedSteps([]);
     setDisplayedCode('');
     setDatasets([]);
+    console.log(localStorage.getItem("userId"))
     setChatMessages(prev => [
       ...prev,
       {
         type: 'user',
         content: prompt,
-        trainingData: trainingData.trim() || undefined
+        trainingData: trainingData.trim() || undefined,
+        userId: localStorage.getItem("userId")
       }
     ]);
     
@@ -244,7 +271,9 @@ useEffect(() => {
     setTrainingData('')
     socket.emit('generate-response', {
       userPrompt: prompt,
-      trainingData: parsedTrainingData
+      trainingData: parsedTrainingData,
+      userId: localStorage.getItem("userId"),
+      sessionId: sessionId || Date.now().toString()
     });
   };
 
@@ -255,6 +284,7 @@ useEffect(() => {
   }
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <NavBar />
       <header className="border-b">
         <div className="container flex h-16 items-center px-4">
           <Link href="/" className="flex items-center space-x-2">
@@ -308,7 +338,7 @@ useEffect(() => {
           </div>
 
           <div className="h-full rounded-lg border overflow-hidden">
-          <MonacoEditorWithIpynbDownload code={displayedCode} />
+          <MonacoEditorWithIpynbDownload isPrinting={isLoading} code={displayedCode} />
           </div>
         </main>
 

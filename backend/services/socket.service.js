@@ -3,16 +3,13 @@ import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getSystemPrompt, CONTINUE_PROMPT } from '../utils/prompt.js';
 import { displayDatasetOptions } from '../utils/kaggle.js';
+import History from '../models/history.js';
+import mongoose from 'mongoose';
 
 class GeminiSocketHandler {
   constructor(server) {
-    // Initialize Google Generative AI
-    this.genAI = new GoogleGenerativeAI(
-process.env.GEMINI_KEY
-
-     );
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
     this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    // Initialize Socket.IO
     this.io = new Server(server, {
       cors: {
         origin: '*',
@@ -23,24 +20,54 @@ process.env.GEMINI_KEY
     this.initializeSocketEvents();
   }
 
-  initializeSocketEvents() {
+  async formatDBConversationHistory(messages) {
+    if (!messages || messages.length === 0) return '';
+    
+    return messages.map(msg => 
+        `${msg.role}: ${msg.content}${
+            msg.trainingData ? `\n\nTraining Data Used: ${msg.trainingData}` : ''
+        }`
+    ).join('\n\n---\n\n');
+  }
+
+  async initializeSocketEvents() {
     this.io.on('connection', (socket) => {
       console.log('New client connected:', socket.id);
 
-      // Generate Response Event
       socket.on('generate-response', async (data) => {
         try {
-          const { userPrompt, trainingData } = data;
-          console.log(data)
-
-          if (!userPrompt) {
+          const { userPrompt, trainingData, userId, sessionId } = data;
+          
+          if (!userPrompt || !userId) {
             socket.emit('error', {
-              message: 'Please provide a prompt',
+              message: 'Please provide prompt and user ID.',
               type: 'missing-prompt',
             });
             return;
           }
 
+          // Find or create user's history
+          let history = await History.findOne({ author: new mongoose.Types.ObjectId(userId) });
+          if (!history) {
+            history = new History({
+              author: userId,
+              sessions: []
+            });
+          }
+
+          // Find or create session
+          let session = history.sessions.find(s => s.sessionId === sessionId);
+          if (!session) {
+            session = {
+              sessionId: sessionId || Date.now().toString(),
+              title: userPrompt.substring(0, 30) + '...',
+              messages: [],
+              lastActive: new Date()
+            };
+            history.sessions.push(session);
+          }
+
+          // Generate keywords and fetch datasets
           const keywordPrompt = `
 "Extract the most relevant machine learning keyword from the following prompt. Focus on identifying the primary domain of the task, such as finance, healthcare, image classification, climate change, COVID-19, e-commerce, social media, education, recommendation systems, time series, sports, natural language processing (NLP), etc. The keyword should clearly represent the core subject or application area of the model being proposed.
 
@@ -52,57 +79,213 @@ Example Output:
 
 Return only one keyword that best represents the domain of the task."
 Here is the prompt:
-${data.userPrompt}`;
+${userPrompt}`;
+
           const result = await this.model.generateContent(keywordPrompt);
           const keywords = result.response.candidates[0].content.parts[0].text;
-          // console.log(result)
-          // console.log(keywords)
-          console.log('Keywords:', keywords)
-          // Get dataset options
-          let datasets = await displayDatasetOptions(keywords);
+          console.log('Keywords:', keywords);
 
+          const datasets = await displayDatasetOptions(keywords);
           let finalTrainingData = trainingData;
 
-          // Use default Kaggle dataset if training data is not provided
-          if (!finalTrainingData) {
-            console.log('Fetching default Kaggle dataset...');
-            const defaultDataset = datasets.data.slice(0, 1);
-            if (defaultDataset) {
-              finalTrainingData = `Dataset: ${defaultDataset.title}\nURL: ${defaultDataset.url}`;
-            } else {
-              console.warn('No default Kaggle dataset found.');
-            }
+          if (!finalTrainingData && datasets.data.length > 0) {
+            const defaultDataset = datasets.data[0];
+            finalTrainingData = `Dataset: ${defaultDataset.title}\nURL: ${defaultDataset.url}`;
           }
 
+          // Save user message
+          session.messages.push({
+            role: 'user',
+            content: userPrompt,
+            timestamp: new Date(),
+            trainingData: finalTrainingData,
+            datasets: datasets
+          });
+
+          // Generate response using conversation context
+          const conversationContext = await this.formatDBConversationHistory(session.messages);
           const systemPrompt = getSystemPrompt();
           const continuePrompt = CONTINUE_PROMPT;
-          const finalPrompt = finalTrainingData
-            ? `${systemPrompt}\n${continuePrompt}\n${userPrompt}\n${finalTrainingData}`
-            : `${systemPrompt}\n${continuePrompt}\n${userPrompt}`;
 
-            const streamingResult = await this.model.generateContentStream(finalPrompt);
-            let fullResponse = '';
-            for await (const chunk of streamingResult.stream) {
-              const chunkText = chunk.text();
-              fullResponse += chunkText;
-              
-              // Emit more meaningful chunks
-              socket.emit('generate-response-chunk', {
-                chunk: chunkText,
-                progress: fullResponse // Send the cumulative progress
-              });
-            }
-            
-            // After streaming is complete
-            socket.emit('generate-response-result', {
-              response: fullResponse,
-              datasets,
-              isComplete: true
-            });
+          const finalPrompt = `${systemPrompt}
+Previous conversation:
+${conversationContext}
+${continuePrompt}
+Current user message: ${userPrompt}
+${finalTrainingData ? `\nAvailable training data: ${finalTrainingData}` : ''}`;
+
+const streamingResult = await this.model.generateContentStream(finalPrompt);
+let fullResponse = '';
+
+for await (const chunk of streamingResult.stream) {
+  try {
+    const chunkText = chunk.text();
+    if (!chunkText) continue; // Skip empty chunks
+    
+    fullResponse += chunkText;
+
+    socket.emit('generate-response-chunk', {
+      sessionId: session.sessionId,
+      chunk: chunkText,
+      isComplete: false
+    });
+  } catch (error) {
+    console.error('Error processing chunk:', error);
+  }
+}
+
+if (!fullResponse) {
+  throw new Error('Empty response from Gemini');
+}
+
+// Format final response with required tags if missing
+const formattedResponse = fullResponse.includes('<code>') ? 
+  fullResponse : 
+  `<ChanetTags>
+1. Processing: Analyzing your request
+</ChanetTags>
+<code>
+${fullResponse}
+</code>`;
+
+// Save and emit final response
+session.messages.push({
+  role: 'assistant',
+  content: formattedResponse,
+  timestamp: new Date()
+});
+
+await history.save();
+
+socket.emit('generate-response-result', {
+  sessionId: session.sessionId,
+  response: formattedResponse,
+  datasets,
+  isComplete: true
+});
+
+} catch (error) {
+socket.emit('error', {
+  message: `Response generation failed: ${error.message}`,
+  type: 'response-generation',
+});
+}
+});
+
+      socket.on('get-sessions', async (data) => {
+        try {
+          const { userId } = data;
+          const history = await History.findOne({
+            author: new mongoose.Types.ObjectId(userId)
+          });
+
+          socket.emit('sessions-result', {
+            sessions: history?.sessions.map(session => ({
+              id: session.sessionId,
+              title: session.title,
+              lastActive: session.lastActive,
+              messageCount: session.messages.length
+            })) || [],
+          });
         } catch (error) {
           socket.emit('error', {
-            message: `Response generation failed: ${error.message}`,
-            type: 'response-generation',
+            message: `Failed to get sessions: ${error.message}`,
+            type: 'sessions-retrieval'
+          });
+        }
+      });
+
+      socket.on('get-history', async (data) => {
+        try {
+          const { userId, sessionId } = data;
+          const history = await History.findOne({
+            author: new mongoose.Types.ObjectId(userId)
+          });
+
+          const session = history?.sessions.find(s => s.sessionId === sessionId);
+
+          if (!session) {
+            socket.emit('history-result', {
+              messages: [],
+              isEmpty: true
+            });
+            return;
+          }
+
+          socket.emit('history-result', {
+            sessionId: session.sessionId,
+            title: session.title,
+            messages: session.messages,
+            isEmpty: false
+          });
+        } catch (error) {
+          socket.emit('error', {
+            message: `History retrieval failed: ${error.message}`,
+            type: 'history-retrieval'
+          });
+        }
+      });
+
+      socket.on('create-session', async (data) => {
+        try {
+          const { userId, title } = data;
+          const history = await History.findOne({
+            author: new mongoose.Types.ObjectId(userId)
+          });
+
+          if (!history) {
+            socket.emit('error', {
+              message: 'User history not found',
+              type: 'session-creation'
+            });
+            return;
+          }
+
+          const newSession = {
+            sessionId: Date.now().toString(),
+            title: title || 'New Chat',
+            messages: [],
+            lastActive: new Date()
+          };
+
+          history.sessions.push(newSession);
+          await history.save();
+
+          socket.emit('session-created', {
+            sessionId: newSession.sessionId,
+            title: newSession.title
+          });
+        } catch (error) {
+          socket.emit('error', {
+            message: `Session creation failed: ${error.message}`,
+            type: 'session-creation'
+          });
+        }
+      });
+
+      socket.on('delete-session', async (data) => {
+        try {
+          const { userId, sessionId } = data;
+          const history = await History.findOne({
+            author: new mongoose.Types.ObjectId(userId)
+          });
+
+          if (!history) {
+            socket.emit('error', {
+              message: 'User history not found',
+              type: 'session-deletion'
+            });
+            return;
+          }
+
+          history.sessions = history.sessions.filter(s => s.sessionId !== sessionId);
+          await history.save();
+
+          socket.emit('session-deleted', { sessionId });
+        } catch (error) {
+          socket.emit('error', {
+            message: `Session deletion failed: ${error.message}`,
+            type: 'session-deletion'
           });
         }
       });
@@ -113,7 +296,6 @@ ${data.userPrompt}`;
     });
   }
 
-  // Method to get the Socket.IO instance
   getIO() {
     return this.io;
   }

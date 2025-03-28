@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Bot, Code2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -17,7 +18,39 @@ import {
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  interface User {
+    displayName: string;
+  }
+
+  const [user, setUser] = useState<User>();
+  const {toast} = useToast()
+  const logoutHandler = async () => {
+    try {
+      const response = await fetch("http://localhost:5217/auth/logout", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        setIsLoggedIn(false);
+        setUser(undefined);
+        localStorage.removeItem("userId");
+      }
+      toast({
+        variant: "default",
+        title: "Success",
+        description: "Logged Out successfully",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error logging out", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        duration: 3000,
+      });
+    }
+  }
 
   useEffect(() => {
     // Check login status
@@ -30,6 +63,7 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           if (data.loggedIn) {
+            console.log(data.user);
             setIsLoggedIn(true);
             setUser(data.user);
           } else {
@@ -46,16 +80,22 @@ export default function Home() {
 
     checkLoginStatus();
   }, []);
-
+  useEffect(() => {
+    if(user?._id){
+      localStorage.setItem("userId", user._id);
+    }
+  }, [user])
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container flex h-16 items-center px-4">
           <div className="flex items-center space-x-2">
             <Bot className="h-6 w-6" />
-            <span className="text-lg font-bold">Code Generator</span>
+            <span className="text-lg font-bold">Chanet</span>
           </div>
+        
           <div className="ml-auto flex items-center space-x-4">
+          {isLoggedIn?  <Button onClick={logoutHandler}> Logout</Button>: ("")}
             <ThemeToggle />
           </div>
         </div>
@@ -81,7 +121,7 @@ export default function Home() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Welcome, {user?.name}!</AlertDialogTitle>
+                      <AlertDialogTitle>Welcome, {user?.displayName}!</AlertDialogTitle>
                       <AlertDialogDescription>
                         You're successfully logged in. Ready to generate some code?
                       </AlertDialogDescription>
@@ -108,5 +148,5 @@ export default function Home() {
         </div>
       </main>
     </div>
-  );
+  )
 }

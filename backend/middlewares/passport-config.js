@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GitHubStrategy } from 'passport-github';
 import User from '../models/user.js'; 
+import History from '../models/history.js';
 
 const GITHUB_CLIENT_ID = process.env.CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -24,10 +25,18 @@ passport.use(
             username: profile.username,
             displayName: profile.displayName,
             avatarUrl: profile.photos[0]?.value || '',
-            email: profile.emails?.[0]?.value || '',
+            email: profile.emails?.[0]?.value || profile._json.email || '',
           });
+
+          let history = await History.findOne({ author: user._id });
+          if (!history) {
+            history = new History({ author: user._id, chat: [] });
+            await history.save();
+          }
         }
+
         done(null, user);
+
       } catch (error) {
         done(error, null);
       }
@@ -35,7 +44,6 @@ passport.use(
   )
 );
 
-// Serialize user to store in session
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });

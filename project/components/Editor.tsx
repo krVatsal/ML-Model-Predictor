@@ -1,11 +1,15 @@
 import React from 'react';
 import Editor from "@monaco-editor/react";
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Button } from './ui/button';
+import { Download, Loader2 } from 'lucide-react';
 
-const MonacoEditorWithIpynbDownload = ({ code }) => {
+interface MonacoEditorWithIpynbDownloadProps {
+  code: string;
+  isPrinting: boolean;
+}
+
+const MonacoEditorWithIpynbDownload = ({ code, isPrinting }: MonacoEditorWithIpynbDownloadProps) => {
   const handleDownload = () => {
-    // Create a Jupyter notebook format structure
     const notebookStructure = {
       cells: [
         {
@@ -39,11 +43,9 @@ const MonacoEditorWithIpynbDownload = ({ code }) => {
       nbformat_minor: 4
     };
 
-    // Create blob from the notebook structure
     const blob = new Blob([JSON.stringify(notebookStructure, null, 2)], 
       { type: 'application/json' });
     
-    // Create download link
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -51,7 +53,6 @@ const MonacoEditorWithIpynbDownload = ({ code }) => {
     document.body.appendChild(a);
     a.click();
     
-    // Cleanup
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   };
@@ -63,9 +64,14 @@ const MonacoEditorWithIpynbDownload = ({ code }) => {
         className="absolute top-2 right-2 z-10"
         variant="secondary"
         size="sm"
+        disabled={isPrinting}
       >
-        <Download className="h-4 w-4 mr-2" />
-        Download as Notebook
+        {isPrinting ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4 mr-2" />
+        )}
+        {isPrinting ? 'Generating...' : 'Download as Notebook'}
       </Button>
       <Editor
         height="100%"
