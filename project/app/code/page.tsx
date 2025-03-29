@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/navbar'
 import { useSearchParams } from 'next/navigation';
 import LoadingSkeleton from '@/components/skeleton'
+import { set } from 'date-fns'
 interface ChatMessage {
   type: 'user' | 'assistant'
   content: string
@@ -134,19 +135,22 @@ useEffect(() => {
       transports: ['websocket']
     });
   
+    let accumulatedResponse = '';
+  
     newSocket.on('connect', () => {
       console.log('Socket connected');
     });
   
     newSocket.on('generate-response-chunk', (data) => {
-      parseGeminiResponse(data.progress, true);
-      console.log(data.progress);
-    })
+      accumulatedResponse += data.chunk;
+      parseGeminiResponse(accumulatedResponse, true);
+    });
   
     newSocket.on('generate-response-result', (data) => {
       console.log(data);
       setIsLoading(false);
       parseGeminiResponse(data.response, false);
+      accumulatedResponse = ''; // Reset accumulated response
       if (data.datasets?.data) {
         setDatasets(data.datasets.data);
       }
@@ -169,57 +173,69 @@ useEffect(() => {
     };
   }, []);
 
-  const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
-    try {
-      // Clear any existing typewriter timeouts
-      if (typewriterRef.current) {
-        clearTimeout(typewriterRef.current);
-      }
+// ...existing code...
 
-      // Extract content between <ChanetTags> tags
-      const tagsMatch = response.match(/<ChanetTags>([\s\S]*?)<\/ChanetTags>/);
-      if (tagsMatch) {
-        const tags = tagsMatch[1].trim().split('\n').map(tag => {
-          const [title, ...descParts] = tag.trim().split(':');
-          return {
-            title: title.replace(/^\d+\.\s*/, '').trim(),
-            description: descParts.join(':').trim()
-          };
-        });
-        setSteps(tags);
-        if (!isStreaming) {
-          typewriterStepsEffect(tags);
-        }
-      }
-
-      // Extract content between <code> tags
-      const codeMatch = response.match(/<code>([\s\S]*?)<\/code>/);
-      if (codeMatch) {
-        const newCode = codeMatch[1].trim();
-        setCode(newCode);
-        if (!isStreaming) {
-          typewriterEffect(newCode, setDisplayedCode);
-          setChatMessages(prev => [
-            ...prev,
-            {
-              type: 'assistant',
-              content: "Let me help you with that...",
-            }
-          ]);
-        }
-      }
-
-      setInitiated(true);
-    } catch (err) {
-      console.error('Error parsing Gemini response:', err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Error parsing the response", 
-        duration: 3000,
-      });
+const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
+  try {
+    // Clear any existing typewriter timeouts
+    if (typewriterRef.current) {
+      clearTimeout(typewriterRef.current);
     }
-  };
+
+    // Only attempt to parse once we have complete tags
+    const hasCompleteTags = response.includes('</ChanetTags>') && response.includes('</code>');
+    
+    if (isStreaming && !hasCompleteTags) {
+      // For streaming, accumulate the response until we have complete tags
+      setDisplayedCode(prev => prev + response);
+      return;
+    }
+
+    // Extract content between <ChanetTags> tags
+    const tagsMatch = response.match(/<ChanetTags>([\s\S]*?)<\/ChanetTags>/);
+    if (tagsMatch) {
+      const tags = tagsMatch[1].trim().split('\n').map(tag => {
+        const [title, ...descParts] = tag.trim().split(':');
+        return {
+          title: title.replace(/^\d+\.\s*/, '').trim(),
+          description: descParts.join(':').trim()
+        };
+      });
+      setSteps(tags);
+      if (!isStreaming) {
+        typewriterStepsEffect(tags);
+      }
+    }
+
+    // Extract content between <code> tags
+    const codeMatch = response.match(/<code>([\s\S]*?)<\/code>/);
+    if (codeMatch) {
+      const newCode = codeMatch[1].trim();
+      setCode(newCode);
+      if (!isStreaming) {
+        typewriterEffect(newCode, setDisplayedCode);
+        setChatMessages(prev => [
+          ...prev,
+          {
+            type: 'assistant',
+            content: "Let me help you with that...",
+          }
+        ]);
+      }
+    }
+
+    setInitiated(true);
+  } catch (err) {
+    console.error('Error parsing Gemini response:', err);
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Error parsing the response", 
+      duration: 3000,
+    });
+  }
+};
+
   useEffect(() => {
     if (sessionId && socket && userId) {
       const handleHistoryResult = (data: any) => {
@@ -282,20 +298,35 @@ useEffect(() => {
       <LoadingSkeleton/>
     )
   }
+  const logoutHandler = async () => {
+    try {
+      const response = await fetch("http://localhost:5217/auth/logout", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        router.push('/');
+      }
+      toast({
+        variant: "default",
+        title: "Success",
+        description: "Logged Out successfully",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error logging out", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        duration: 3000,
+      });
+    }
+  };
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <NavBar />
-      <header className="border-b">
-        <div className="container flex h-16 items-center px-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <Bot className="h-6 w-6" />
-            <span className="text-lg font-bold">Chanet</span>
-          </Link>
-          <div className="ml-auto flex items-center space-x-4">
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <NavBar isLoggedIn={auth} onLogout={logoutHandler} />
+
 
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         <main className={`flex-1 container px-4 py-4 grid grid-rows-[auto,1fr] gap-4 transition-all duration-300 ease-in-out ${initiated ? 'w-[65%]' : 'w-full'}`}>

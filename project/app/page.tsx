@@ -15,7 +15,7 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"; 
-
+import { NavBar } from "@/components/navbar";
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   interface User {
@@ -86,23 +86,12 @@ export default function Home() {
     }
   }, [user])
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex h-16 items-center px-4">
-          <div className="flex items-center space-x-2">
-            <Bot className="h-6 w-6" />
-            <span className="text-lg font-bold">Chanet</span>
-          </div>
-        
-          <div className="ml-auto flex items-center space-x-4">
-          {isLoggedIn?  <Button onClick={logoutHandler}> Logout</Button>: ("")}
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+<div className="min-h-screen bg-background">
+      <NavBar isLoggedIn={isLoggedIn} onLogout={logoutHandler} />
 
       <main className="container px-4 py-24">
         <div className="flex flex-col items-center text-center">
+
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
             Your Coding Companion
           </h1>
