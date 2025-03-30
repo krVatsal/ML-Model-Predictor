@@ -44,10 +44,7 @@ passport.use(
           // Create history for new user with empty sessions array
           let history = await History.findOne({ author: user._id });
           if (!history) {
-            history = new History({ 
-              author: user._id, 
-              sessions: [] // Fixed syntax
-            });
+            history = new History({ author: user._id, chat: [] });
             await history.save();
           }
         }
