@@ -17,9 +17,22 @@ import { useSearchParams } from 'next/navigation';
 import LoadingSkeleton from '@/components/skeleton'
 import { set } from 'date-fns'
 interface ChatMessage {
-  type: 'user' | 'assistant'
-  content: string
-  trainingData?: string
+  role: 'user' | 'assistant';
+  type?: 'user' | 'assistant';  // Optional for backward compatibility
+  content: string;
+  trainingData?: string;
+  datasets?: any;
+  timestamp: Date;
+  userId?: string | null;
+}
+
+interface HistoryResult {
+  isEmpty: boolean;
+  messages: ChatMessage[];
+  sessionId?: string;
+  title?: string;
+  lastResponse?: string;
+  datasets?: any;
 }
 export default function CodePage() {
   const [socket, setSocket] = useState<any>(null);
@@ -43,12 +56,6 @@ export default function CodePage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session');
 const router= useRouter()
-interface HistoryResult {
-  isEmpty: boolean;
-  messages: ChatMessage[];
-  sessionId?: string;
-  title?: string;
-}
 useEffect(() => {
   const checkAuth = async () => {
     try {
@@ -151,8 +158,8 @@ useEffect(() => {
       setIsLoading(false);
       parseGeminiResponse(data.response, false);
       accumulatedResponse = ''; // Reset accumulated response
-      if (data.datasets?.data) {
-        setDatasets(data.datasets.data);
+      if (data.datasets) {
+        setDatasets(data.datasets);
       }
     });
   
@@ -173,25 +180,35 @@ useEffect(() => {
     };
   }, []);
 
-// ...existing code...
+
 
 const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
   try {
-    // Clear any existing typewriter timeouts
     if (typewriterRef.current) {
       clearTimeout(typewriterRef.current);
     }
 
-    // Only attempt to parse once we have complete tags
+    // Get clean chat content (everything before the XML tags)
+    const getChatContent = (text: string) => {
+      const xmlIndex = text.indexOf('```xml');
+      if (xmlIndex === -1) return text;
+      return text.substring(0, xmlIndex).trim();
+    };
+
+    // Reset states if not streaming
+    if (!isStreaming) {
+      setDisplayedCode('');
+      setDisplayedSteps([]);
+    }
+
     const hasCompleteTags = response.includes('</ChanetTags>') && response.includes('</code>');
     
     if (isStreaming && !hasCompleteTags) {
-      // For streaming, accumulate the response until we have complete tags
       setDisplayedCode(prev => prev + response);
       return;
     }
 
-    // Extract content between <ChanetTags> tags
+    // Extract and set steps
     const tagsMatch = response.match(/<ChanetTags>([\s\S]*?)<\/ChanetTags>/);
     if (tagsMatch) {
       const tags = tagsMatch[1].trim().split('\n').map(tag => {
@@ -203,24 +220,31 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
       });
       setSteps(tags);
       if (!isStreaming) {
-        typewriterStepsEffect(tags);
+        setDisplayedSteps(tags);
+      } else {
+        await typewriterStepsEffect(tags);
       }
     }
 
-    // Extract content between <code> tags
+    // Extract and set code
     const codeMatch = response.match(/<code>([\s\S]*?)<\/code>/);
     if (codeMatch) {
       const newCode = codeMatch[1].trim();
       setCode(newCode);
       if (!isStreaming) {
-        typewriterEffect(newCode, setDisplayedCode);
+        setDisplayedCode(newCode);
+        // Update chat messages with clean content
         setChatMessages(prev => [
           ...prev,
           {
-            type: 'assistant',
-            content: "Let me help you with that...",
+            role: 'assistant',
+            content: getChatContent(response),
+            timestamp: new Date(),
+            datasets: datasets
           }
         ]);
+      } else {
+        await typewriterEffect(newCode, setDisplayedCode);
       }
     }
 
@@ -235,12 +259,30 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
     });
   }
 };
-
   useEffect(() => {
     if (sessionId && socket && userId) {
-      const handleHistoryResult = (data: any) => {
+      const handleHistoryResult = (data: HistoryResult) => {
         if (!data.isEmpty) {
-          setChatMessages(data.messages);
+          // Clean chat messages before setting
+          const cleanedMessages = data.messages.map(msg => ({
+            ...msg,
+            content: msg.role === 'assistant' ? 
+              msg.content.split('```xml')[0].trim() || "Ok let me help you with that...": 
+              msg.content 
+          }));
+          
+          setChatMessages(cleanedMessages);
+          
+          // Parse the last complete response to restore UI state
+          if (data.lastResponse) {
+            parseGeminiResponse(data.lastResponse, false);
+          }
+          
+          // Restore datasets
+          if (data.datasets) {
+            setDatasets(data.datasets);
+          }
+          
           setInitiated(true);
         }
       };
@@ -248,7 +290,6 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
       socket.emit('get-history', { userId, sessionId });
       socket.on('history-result', handleHistoryResult);
   
-      // Cleanup listener when component unmounts
       return () => {
         socket.off('history-result', handleHistoryResult);
       };
@@ -263,13 +304,14 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
     setDisplayedSteps([]);
     setDisplayedCode('');
     setDatasets([]);
-    console.log(localStorage.getItem("userId"))
+    
     setChatMessages(prev => [
       ...prev,
       {
-        type: 'user',
+        role: 'user',  // Changed from type to role
         content: prompt,
         trainingData: trainingData.trim() || undefined,
+        timestamp: new Date(),
         userId: localStorage.getItem("userId")
       }
     ]);
@@ -283,8 +325,10 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
         return;
       }
     }
-    setPrompt('')
-    setTrainingData('')
+    
+    setPrompt('');
+    setTrainingData('');
+    
     socket.emit('generate-response', {
       userPrompt: prompt,
       trainingData: parsedTrainingData,

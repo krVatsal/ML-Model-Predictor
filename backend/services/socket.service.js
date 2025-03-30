@@ -152,7 +152,9 @@ ${fullResponse}
 session.messages.push({
   role: 'assistant',
   content: formattedResponse,
-  timestamp: new Date()
+  timestamp: new Date(),
+  datasets: datasets.data, // Save the actual dataset array
+  trainingData: finalTrainingData
 });
 
 await history.save();
@@ -160,7 +162,7 @@ await history.save();
 socket.emit('generate-response-result', {
   sessionId: session.sessionId,
   response: formattedResponse,
-  datasets,
+  datasets: datasets.data, // Send the actual dataset array
   isComplete: true
 });
 
@@ -195,27 +197,35 @@ socket.emit('error', {
         }
       });
 
-      socket.on('get-history', async (data) => {
+          socket.on('get-history', async (data) => {
         try {
           const { userId, sessionId } = data;
           const history = await History.findOne({
             author: new mongoose.Types.ObjectId(userId)
           });
-
+      
           const session = history?.sessions.find(s => s.sessionId === sessionId);
-
+      
           if (!session) {
-            socket.emit('history-result', {
-              messages: [],
-              isEmpty: true
-            });
+            socket.emit('history-result', { messages: [], isEmpty: true });
             return;
           }
-
+      
+          // Find last assistant message with complete response
+          const lastAssistantMessage = session.messages
+            .filter(msg => 
+              msg.role === 'assistant' && 
+              msg.content.includes('</ChanetTags>') && 
+              msg.content.includes('</code>')
+            )
+            .pop();
+      
           socket.emit('history-result', {
             sessionId: session.sessionId,
             title: session.title,
             messages: session.messages,
+            lastResponse: lastAssistantMessage?.content || '',
+            datasets: lastAssistantMessage?.datasets || [], // Send datasets from the last message
             isEmpty: false
           });
         } catch (error) {

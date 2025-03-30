@@ -19,7 +19,8 @@ import { NavBar } from "@/components/navbar";
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   interface User {
-    displayName: string;
+    displayName: string,
+  _id: string
   }
 
   const [user, setUser] = useState<User>();
