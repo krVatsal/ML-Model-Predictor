@@ -25,6 +25,13 @@ router.get(
 
 // Update the status route to include better error handling
 router.get('/status', (req, res) => {
+  if (!req.session) {
+    return res.status(401).json({ 
+      loggedIn: false,
+      message: 'No session found'
+    });
+  }
+
   console.log('Session:', req.session);
   console.log('User:', req.user);
   console.log('Is Authenticated:', req.isAuthenticated());
@@ -39,7 +46,11 @@ router.get('/status', (req, res) => {
       } 
     });
   }
-  res.status(401).json({ loggedIn: false });
+
+  res.status(401).json({ 
+    loggedIn: false,
+    message: 'Not authenticated'
+  });
 });
 
 // Update logout route to handle session destruction

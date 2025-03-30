@@ -26,15 +26,21 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-    session({
-      secret: 'your_secret',
-      resave: false,
-      saveUninitialized: true,
-      store: MongoStore.create({ mongoUrl:process.env.DATABASE}),
-      cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 day
-    })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60 // 1 day
+  }),
+  cookie: {
+    secure: true, // Required for production HTTPS
+    sameSite: 'none', // Required for cross-origin
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    httpOnly: true
+  }
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
