@@ -98,18 +98,26 @@ useEffect(() => {
   }, [chatMessages]);
   const typewriterRef = useRef<any>(null);
 
-  const typewriterEffect = async (text: string, setter: (text: string) => void, speed = 2) => {
-    setIsLoading(true)
+  const typewriterEffect = async (text: string, setter: (text: string) => void, speed = 0.5) => {
+    setIsLoading(true);
+    const chunkSize = 10; // Increased chunk size
     let currentText = '';
-    for (let i = 0; i < text.length; i++) {
-      currentText += text[i];
-      setter(currentText);
-      await new Promise(resolve => setTimeout(resolve, speed));
-    }
-    setIsLoading(false)
-  };
+    
+    const animate = async (timestamp: number) => {
+      const chunk = text.slice(currentText.length, currentText.length + chunkSize);
+      if (chunk) {
+        currentText += chunk;
+        setter(currentText);
+        requestAnimationFrame(animate);
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+};
 
-  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 2) => {
+  const typewriterStepsEffect = async (steps: Array<{title: string, description: string}>, speed = 0.5) => {
     const displaySteps: Array<{title: string, description: string}> = [];
     
     for (const step of steps) {
@@ -143,22 +151,25 @@ useEffect(() => {
     });
   
     let accumulatedResponse = '';
-  
-    newSocket.on('connect', () => {
-      console.log('Socket connected');
-    });
+    let debounceTimer: NodeJS.Timeout;
   
     newSocket.on('generate-response-chunk', (data) => {
       accumulatedResponse += data.chunk;
-      parseGeminiResponse(accumulatedResponse, true);
+      
+      // Debounce the parsing to prevent too frequent updates
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        parseGeminiResponse(accumulatedResponse, true);
+      }, 16); // Roughly 60fps
     });
   
     newSocket.on('generate-response-result', (data) => {
-      console.log(data);
+      console.log("hii2",data);
       setIsLoading(false);
       parseGeminiResponse(data.response, false);
       accumulatedResponse = ''; // Reset accumulated response
       if (data.datasets) {
+        console.log("hii3",data.datasets)
         setDatasets(data.datasets);
       }
     });
@@ -182,83 +193,59 @@ useEffect(() => {
 
 
 
-const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
-  try {
-    if (typewriterRef.current) {
-      clearTimeout(typewriterRef.current);
-    }
+  const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
+    try {
+      if (typewriterRef.current) {
+        clearTimeout(typewriterRef.current);
+      }
+  
+      // Reset states if not streaming
+      if (!isStreaming) {
+        setDisplayedCode('');
+        setDisplayedSteps([]);
+      }
+  
+      const hasCompleteTags = response.includes('</ChanetTags>') && response.includes('</code>');
+      if (isStreaming) {
+        const partialCodeMatch = response.match(/<code>([\s\S]*?)(?:<\/code>|$)/);
+        if (partialCodeMatch) {
+          setDisplayedCode(partialCodeMatch[1].trim());
+        }
+        return; // Skip other processing while streaming
+      }
+  
+      // Extract and set steps
+      const tagsMatch = response.match(/<ChanetTags>([\s\S]*?)<\/ChanetTags>/);
+      if (tagsMatch) {
+        const tags = tagsMatch[1].trim().split('\n').map(tag => {
+          const [title, ...descParts] = tag.trim().split(':');
+          return {
+            title: title.replace(/^\d+\.\s*/, '').trim(),
+            description: descParts.join(':').trim()
+          };
+        });
+        setSteps(tags);
+        setDisplayedSteps(tags); // No animation for steps
+      }
 
-    // Get clean chat content (everything before the XML tags)
-    const getChatContent = (text: string) => {
-      const xmlIndex = text.indexOf('```xml');
-      if (xmlIndex === -1) return text;
-      return text.substring(0, xmlIndex).trim();
-    };
-
-    // Reset states if not streaming
-    if (!isStreaming) {
-      setDisplayedCode('');
-      setDisplayedSteps([]);
-    }
-
-    const hasCompleteTags = response.includes('</ChanetTags>') && response.includes('</code>');
-    
-    if (isStreaming && !hasCompleteTags) {
-      setDisplayedCode(prev => prev + response);
-      return;
-    }
-
-    // Extract and set steps
-    const tagsMatch = response.match(/<ChanetTags>([\s\S]*?)<\/ChanetTags>/);
-    if (tagsMatch) {
-      const tags = tagsMatch[1].trim().split('\n').map(tag => {
-        const [title, ...descParts] = tag.trim().split(':');
-        return {
-          title: title.replace(/^\d+\.\s*/, '').trim(),
-          description: descParts.join(':').trim()
-        };
+      const codeMatch = response.match(/<code>([\s\S]*?)<\/code>/);
+      if (codeMatch) {
+        const newCode = codeMatch[1].trim();
+        setCode(newCode);
+        setDisplayedCode(newCode); // No animation for final code
+      }
+  
+      setInitiated(true);
+    } catch (err) {
+      console.error('Error parsing Gemini response:', err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error parsing the response", 
+        duration: 3000,
       });
-      setSteps(tags);
-      if (!isStreaming) {
-        setDisplayedSteps(tags);
-      } else {
-        await typewriterStepsEffect(tags);
-      }
     }
-
-    // Extract and set code
-    const codeMatch = response.match(/<code>([\s\S]*?)<\/code>/);
-    if (codeMatch) {
-      const newCode = codeMatch[1].trim();
-      setCode(newCode);
-      if (!isStreaming) {
-        setDisplayedCode(newCode);
-        // Update chat messages with clean content
-        setChatMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: getChatContent(response),
-            timestamp: new Date(),
-            datasets: datasets
-          }
-        ]);
-      } else {
-        await typewriterEffect(newCode, setDisplayedCode);
-      }
-    }
-
-    setInitiated(true);
-  } catch (err) {
-    console.error('Error parsing Gemini response:', err);
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Error parsing the response", 
-      duration: 3000,
-    });
-  }
-};
+  };
   useEffect(() => {
     if (sessionId && socket && userId) {
       const handleHistoryResult = (data: HistoryResult) => {
@@ -267,7 +254,7 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
           const cleanedMessages = data.messages.map(msg => ({
             ...msg,
             content: msg.role === 'assistant' ? 
-              msg.content.split('```xml')[0].trim() || "Ok let me help you with that...": 
+               "Ok let me help you with that...": 
               msg.content 
           }));
           
@@ -276,10 +263,12 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
           // Parse the last complete response to restore UI state
           if (data.lastResponse) {
             parseGeminiResponse(data.lastResponse, false);
+            console.log("hii4",data)
           }
           
           // Restore datasets
           if (data.datasets) {
+            console.log("hii",data.datasets)
             setDatasets(data.datasets);
           }
           
@@ -422,18 +411,18 @@ const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
             initiated ? 'w-[35%] opacity-100' : 'w-0 opacity-0'
           }`}
         >
-          <div className="flex-1 overflow-y-auto p-4" ref={chatContainerRef}>
+          <div className="flex-1 overflow-y-auto p-4 overflow-hidden" ref={chatContainerRef}>
             {chatMessages.map((message, index) => (
-              <div key={index} className={`mb-4 ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
+              <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                 <div className={`inline-block max-w-[85%] p-3 rounded-lg ${
-                  message.type === 'user' 
+                  message.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted/30'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
-                    {message.type === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                    {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                     <span className="font-medium">
-                      {message.type === 'user' ? 'You' : 'Assistant'}
+                      {message.role === 'user' ? 'You' : 'Assistant'}
                     </span>
                   </div>
                   <p className="text-sm">{message.content}</p>
