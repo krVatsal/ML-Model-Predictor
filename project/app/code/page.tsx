@@ -59,7 +59,7 @@ const router= useRouter()
 useEffect(() => {
   const checkAuth = async () => {
     try {
-      const response = await fetch('http://localhost:5217/auth/status', {
+      const response = await fetch('https://chanet-974929463300.asia-south2.run.app/auth/status', {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -146,7 +146,7 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5217', {
+    const newSocket = io('https://chanet-974929463300.asia-south2.run.app', {
       transports: ['websocket']
     });
   
@@ -333,7 +333,7 @@ useEffect(() => {
   }
   const logoutHandler = async () => {
     try {
-      const response = await fetch("http://localhost:5217/auth/logout", {
+      const response = await fetch("https://chanet-974929463300.asia-south2.run.app/auth/logout", {
         method: "GET",
         credentials: "include",
       });
