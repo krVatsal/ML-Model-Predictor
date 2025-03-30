@@ -7,6 +7,19 @@ const GITHUB_CLIENT_ID = process.env.CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.CLIENT_SECRET;
 const GITHUB_CALLBACK_URL = 'https://chanet-974929463300.asia-south2.run.app/auth/github/callback';
 
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
 passport.use(
   new GitHubStrategy(
     {

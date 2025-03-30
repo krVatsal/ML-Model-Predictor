@@ -1,25 +1,27 @@
 import express from 'express';
-import passport from '../middlewares/passport-config.js'; // Path to your configured passport file
+import passport from '../middlewares/passport-config.js';
 
 const router = express.Router();
 
-// Route to initiate GitHub authentication
-router.get('/github', passport.authenticate('github'));
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 
 router.get(
   '/github/callback',
-  passport.authenticate('github', { failureRedirect: 'https://chanet-frontend-974929463300.asia-south2.run.app' }),
+  passport.authenticate('github', { 
+    failureRedirect: 'https://chanet-frontend-974929463300.asia-south2.run.app',
+    session: true
+  }),
   (req, res) => {
-    // Ensure session is saved before redirect
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session save failed' });
       }
-      res.redirect('https://chanet-frontend-974929463300.asia-south2.run.app');
+      res.redirect('https://chanet-frontend-974929463300.asia-south2.run.app/code');
     });
   }
 );
+
 
 // Update the status route to include better error handling
 router.get('/status', (req, res) => {
