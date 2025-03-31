@@ -27,7 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
@@ -35,6 +35,8 @@ app.use(session({
     ttl: 24 * 60 * 60 // 1 day
   }),
   cookie: {
+    secure: true,
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
