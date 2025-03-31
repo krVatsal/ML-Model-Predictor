@@ -21,8 +21,10 @@ initSocketHandler(server);
 dbConnect();
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: "https://chanet-frontend-974929463300.asia-south2.run.app",
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -43,7 +45,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
-
+app.set('trust proxy', 1); // Trust the first proxy
 // Global variables for flash messages
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
