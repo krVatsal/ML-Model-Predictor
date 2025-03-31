@@ -35,10 +35,7 @@ app.use(session({
     ttl: 24 * 60 * 60 // 1 day
   }),
   cookie: {
-    secure: true, // Required for production HTTPS
-    sameSite: 'none', // Required for cross-origin
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    httpOnly: true
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 app.use(passport.initialize());
