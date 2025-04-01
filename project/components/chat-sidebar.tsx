@@ -56,11 +56,12 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
 
   return (
     <div className={cn(
-      "fixed inset-y-0 left-0 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out z-50",
+      "fixed inset-y-0 left-0 bg-background border-r transform transition-transform duration-200 ease-in-out z-50",
+      "w-[80%] sm:w-[300px] lg:w-[350px]",
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="font-semibold">Chat History</h2>
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+        <h2 className="font-semibold text-sm sm:text-base">Chat History</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>

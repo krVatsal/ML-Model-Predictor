@@ -91,24 +91,23 @@ useEffect(() => {
     }
   }, [user])
   return (
-<div className="min-h-screen bg-background">
+<div className="min-h-screen bg-background flex flex-col">
       <NavBar isLoggedIn={isLoggedIn} onLogout={logoutHandler} />
 
-      <main className="container px-4 py-24">
+      <main className="container px-4 md:px-6 flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center text-center">
-
-          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter">
             Your Coding Companion
           </h1>
-          <p className="mt-4 text-muted-foreground sm:text-xl">
+          <p className="mt-4 text-lg md:text-xl text-muted-foreground">
             Generate code instantly with Chanet
           </p>
-          <div className="mt-8">
+          <div className="mt-6 md:mt-8">
             {isLoggedIn ? (
               <>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="lg" className="h-12">
+                    <Button size="lg" className="h-10 md:h-12 text-sm md:text-base">
                       <Code2 className="mr-2 h-4 w-4" />
                       Generate Code
                     </Button>
@@ -122,7 +121,7 @@ useEffect(() => {
                     </AlertDialogHeader>
                     <AlertDialogAction>
                       <Link href="/code">
-                        <Button size="lg" className="h-12">
+                        <Button size="lg" className="h-10 md:h-12 text-sm md:text-base">
                           Start Generating
                         </Button>
                       </Link>
@@ -132,7 +131,7 @@ useEffect(() => {
               </>
             ) : (
               <Link href="https://chanet-974929463300.asia-south2.run.app/auth/github">
-                <Button size="lg" className="h-12">
+                <Button size="lg" className="h-10 md:h-12 text-sm md:text-base">
                   <Code2 className="mr-2 h-4 w-4" />
                   Log In to Generate Code
                 </Button>

@@ -361,14 +361,16 @@ useEffect(() => {
       <NavBar isLoggedIn={auth} onLogout={logoutHandler} />
 
 
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-        <main className={`flex-1 container px-4 py-4 grid grid-rows-[auto,1fr] gap-4 transition-all duration-300 ease-in-out ${initiated ? 'w-[65%]' : 'w-full'}`}>
-          <div className="flex gap-2">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden">
+        <main className={`flex-1 container px-2 md:px-4 py-2 md:py-4 grid grid-rows-[auto,1fr] gap-2 md:gap-4 transition-all duration-300 ease-in-out ${
+          initiated ? 'lg:w-[65%]' : 'w-full'
+        }`}>
+          <div className="flex flex-col md:flex-row gap-2">
             <Textarea
               placeholder="Describe the code you want to generate..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="flex-1"
+              className="flex-1 min-h-[100px] md:min-h-0"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -380,7 +382,7 @@ useEffect(() => {
               placeholder="Sample Training Data (Optional, must be JSON)"
               value={trainingData}
               onChange={(e) => setTrainingData(e.target.value)}
-              className="flex-1"
+              className="flex-1 min-h-[100px] md:min-h-0"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -390,7 +392,7 @@ useEffect(() => {
             />
             <Button 
               onClick={handleSubmit} 
-              className="h-full flex items-center justify-center"
+              className="h-10 md:h-full w-full md:w-auto flex items-center justify-center"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -406,12 +408,12 @@ useEffect(() => {
           </div>
         </main>
 
-       <div 
+        <div 
           className={`transition-all duration-300 ease-in-out flex flex-col ${
-            initiated ? 'w-[35%] opacity-100' : 'w-0 opacity-0'
+            initiated ? 'h-[50vh] lg:h-auto lg:w-[35%] opacity-100' : 'h-0 lg:w-0 opacity-0'
           }`}
         >
-          <div className="flex-1 overflow-y-auto p-4 overflow-hidden" ref={chatContainerRef}>
+          <div className="flex-1 overflow-y-auto p-2 md:p-4 overflow-hidden" ref={chatContainerRef}>
             {chatMessages.map((message, index) => (
               <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                 <div className={`inline-block max-w-[85%] p-3 rounded-lg ${
@@ -437,12 +439,12 @@ useEffect(() => {
             ))}
             {displayedSteps.length > 0 && (
               <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-4">Implementation Steps</h3>
-                <div className="flex flex-col gap-4">
+                <h3 className="text-base lg:text-lg font-semibold mb-2 md:mb-4">Implementation Steps</h3>
+                <div className="flex flex-col gap-2 md:gap-4">
                   {displayedSteps.map((step, index) => (
-                    <div key={index} className="rounded-lg border p-4 bg-muted/30">
-                      <h4 className="font-medium text-primary mb-2">{step.title}</h4>
-                      <p className="text-sm text-muted-foreground">{step.description}</p>
+                    <div key={index} className="rounded-lg border p-2 md:p-4 bg-muted/30">
+                      <h4 className="font-medium text-primary mb-1 md:mb-2">{step.title}</h4>
+                      <p className="text-xs md:text-sm text-muted-foreground">{step.description}</p>
                     </div>
                   ))}
                 </div>
@@ -453,7 +455,7 @@ useEffect(() => {
               <div className="loader h-4 w-4 border-2 border-t-transparent border-gray-600 rounded-full animate-spin"></div>
             ): (
               <div>
-              <h3 className="text-lg font-semibold mb-4">Recommended Datasets</h3>
+              <h3 className="text-base lg:text-lg font-semibold mb-2 md:mb-4">Recommended Datasets</h3>
               <div className="flex flex-col gap-2">
                 {datasets.map((dataset: any, index) => (
                   <a
@@ -461,7 +463,7 @@ useEffect(() => {
                     href={dataset.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-muted p-2 rounded hover:bg-muted/80 transition-colors"
+                    className="bg-muted p-2 text-sm rounded hover:bg-muted/80 transition-colors"
                   >
                     {dataset.title}
                   </a>
