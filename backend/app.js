@@ -55,8 +55,9 @@ app.use((req, res, next) => {
 });
 
 // Replace app.listen with server.listen
-server.listen('5217', () => {
-    console.log("app listening on port 5217");
+const PORT=process.env.PORT
+server.listen(PORT, () => {
+    console.log("app listening on port", {PORT});
 });
 
 // Routes
