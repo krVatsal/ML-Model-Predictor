@@ -27,7 +27,7 @@ export default function Home() {
   const {toast} = useToast()
   const logoutHandler = async () => {
     try {
-      const response = await fetch("https://chanet-974929463300.asia-south2.run.app/auth/logout", {
+      const response = await fetch("https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/logout", {
         method: "GET",
         credentials: "include",
       });
@@ -55,7 +55,7 @@ export default function Home() {
 useEffect(() => {
   const checkLoginStatus = async () => {
     try {
-      const response = await fetch("https://chanet-974929463300.asia-south2.run.app/auth/status", {
+      const response = await fetch("https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/status", {
         method: "GET",
         credentials: "include",
         headers: {
@@ -130,7 +130,7 @@ useEffect(() => {
                 </AlertDialog>
               </>
             ) : (
-              <Link href="https://chanet-974929463300.asia-south2.run.app/auth/github">
+              <Link href="https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/github">
                 <Button size="lg" className="h-10 md:h-12 text-sm md:text-base">
                   <Code2 className="mr-2 h-4 w-4" />
                   Log In to Generate Code

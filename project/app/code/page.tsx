@@ -59,7 +59,7 @@ const router= useRouter()
 useEffect(() => {
   const checkAuth = async () => {
     try {
-      const response = await fetch('https://chanet-974929463300.asia-south2.run.app/auth/status', {
+      const response = await fetch('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/status', {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -146,7 +146,7 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    const newSocket = io('https://chanet-974929463300.asia-south2.run.app', {
+    const newSocket = io('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net', {
       transports: ['websocket']
     });
   
@@ -333,7 +333,7 @@ useEffect(() => {
   }
   const logoutHandler = async () => {
     try {
-      const response = await fetch("https://chanet-974929463300.asia-south2.run.app/auth/logout", {
+      const response = await fetch("https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/logout", {
         method: "GET",
         credentials: "include",
       });

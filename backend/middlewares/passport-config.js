@@ -3,9 +3,9 @@ import { Strategy as GitHubStrategy } from 'passport-github';
 import User from '../models/user.js'; 
 import History from '../models/history.js';
 
-const GITHUB_CLIENT_ID = process.env.CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.CLIENT_SECRET;
-const GITHUB_CALLBACK_URL = 'https://chanet-974929463300.asia-south2.run.app/auth/github/callback';
+const GITHUB_CLIENT_ID = process.env.CLIENT_ID || "Iv23liVybEuaA1zmsH4c"
+const GITHUB_CLIENT_SECRET = process.env.CLIENT_SECRET || "6e03339e16ddcbee3dadb3ce03748bb323839156"
+const GITHUB_CALLBACK_URL = 'https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.netFchante/auth/github/callback';
 
 // GitHub Strategy
 passport.use(

@@ -21,7 +21,7 @@ initSocketHandler(server);
 dbConnect();
 
 app.use(cors({
-    origin: "https://chanet-frontend-974929463300.asia-south2.run.app",
+    origin: "https://lemon-pebble-0dbc46900.1.azurestaticapps.net",
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
