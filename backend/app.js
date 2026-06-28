@@ -6,13 +6,13 @@ import flash from 'connect-flash';
 import passport from './middlewares/passport-config.js';
 import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
+dotenv.config();
 import authRoutes from './routes/auth.js'; 
 import genRoutes from './routes/generate.js';
 import cors from 'cors';
 import History from './models/history.js';
 import http from 'http';
 import { initSocketHandler } from './controller/groq.controller.js';
-dotenv.config();
 
 let app = express();
 const server = http.createServer(app);
@@ -21,11 +21,12 @@ initSocketHandler(server);
 dbConnect();
 
 app.use(cors({
-    origin: "https://chanet.vercel.app/",
+    origin: process.env.CORS_ORIGIN || 'https://chanet.vercel.app',
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie']
 }));
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({

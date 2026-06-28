@@ -12,8 +12,9 @@ class GroqSocketHandler {
     this.modelName = 'llama-3.3-70b-versatile';
     this.io = new Server(server, {
       cors: {
-        origin: '*',
+        origin: process.env.CORS_ORIGIN || 'https://chanet.vercel.app',
         methods: ['GET', 'POST'],
+        credentials: true,
       },
     });
 
