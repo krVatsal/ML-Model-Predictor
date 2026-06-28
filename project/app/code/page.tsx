@@ -59,7 +59,7 @@ const router= useRouter()
 useEffect(() => {
   const checkAuth = async () => {
     try {
-      const response = await fetch('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/status', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/status`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -146,7 +146,7 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    const newSocket = io('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net', {
+    const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL as string, {
       transports: ['websocket']
     });
   
@@ -333,7 +333,7 @@ useEffect(() => {
   }
   const logoutHandler = async () => {
     try {
-      const response = await fetch("https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net/auth/logout", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
         method: "GET",
         credentials: "include",
       });

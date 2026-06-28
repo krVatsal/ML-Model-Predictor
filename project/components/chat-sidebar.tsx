@@ -24,7 +24,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
 
   useEffect(() => {
     if (isOpen && userId) {
-      const socket = io('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net');
+      const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL as string);
       
       socket.emit('get-sessions', { userId });
       
@@ -39,7 +39,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
   }, [isOpen, userId]);
 
   const createNewChat = () => {
-    const socket = io('https://chanet-backend-cef3d3b9g9b6d8e4.centralindia-01.azurewebsites.net');
+    const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL as string);
     socket.emit('create-session', { 
       userId,
       title: 'New Chat' 
