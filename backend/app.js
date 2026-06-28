@@ -11,7 +11,7 @@ import genRoutes from './routes/generate.js';
 import cors from 'cors';
 import History from './models/history.js';
 import http from 'http';
-import { initSocketHandler } from './controller/gemini.controller.js';
+import { initSocketHandler } from './controller/groq.controller.js';
 dotenv.config();
 
 let app = express();

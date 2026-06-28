@@ -1,4 +1,4 @@
-import GeminiSocketHandler from '../services/socket.service.js';
+import GroqSocketHandler from '../services/socket.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -7,7 +7,7 @@ import { ApiError } from '../utils/ApiError.js';
 let socketHandler;
 
 const initSocketHandler = (server) => {
-  socketHandler = new GeminiSocketHandler(server);
+  socketHandler = new GroqSocketHandler(server);
   return socketHandler;
 };
 
@@ -55,7 +55,7 @@ const genResponse = asyncHandler(async (req, res) => {
   // Listen for the result with proper validation
   socketHandler.getIO().once('generate-response-result', (data) => {
     if (!data || !data.response) {
-      throw new ApiError(500, 'Invalid response format from Gemini');
+      throw new ApiError(500, 'Invalid response format from Groq');
     }
 
     try {

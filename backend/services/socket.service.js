@@ -1,15 +1,15 @@
 import { Server } from 'socket.io';
 import 'dotenv/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import { getSystemPrompt, CONTINUE_PROMPT } from '../utils/prompt.js';
 import { displayDatasetOptions } from '../utils/kaggle.js';
 import History from '../models/history.js';
 import mongoose from 'mongoose';
 
-class GeminiSocketHandler {
+class GroqSocketHandler {
   constructor(server) {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    this.groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    this.modelName = 'llama-3.3-70b-versatile';
     this.io = new Server(server, {
       cors: {
         origin: '*',
@@ -81,8 +81,11 @@ Return only one keyword that best represents the domain of the task."
 Here is the prompt:
 ${userPrompt}`;
 
-          const result = await this.model.generateContent(keywordPrompt);
-          const keywords = result.response.candidates[0].content.parts[0].text;
+          const result = await this.groq.chat.completions.create({
+            model: this.modelName,
+            messages: [{ role: 'user', content: keywordPrompt }]
+          });
+          const keywords = result.choices[0].message.content;
           console.log('Keywords:', keywords);
 
           const datasets = await displayDatasetOptions(keywords);
@@ -113,12 +116,16 @@ ${continuePrompt}
 Current user message: ${userPrompt}
 ${finalTrainingData ? `\nAvailable training data: ${finalTrainingData}` : ''}`;
 
-const streamingResult = await this.model.generateContentStream(finalPrompt);
+const streamingResult = await this.groq.chat.completions.create({
+  model: this.modelName,
+  messages: [{ role: 'user', content: finalPrompt }],
+  stream: true
+});
 let fullResponse = '';
 
-for await (const chunk of streamingResult.stream) {
+for await (const chunk of streamingResult) {
   try {
-    const chunkText = chunk.text();
+    const chunkText = chunk.choices[0]?.delta?.content || '';
     if (!chunkText) continue; // Skip empty chunks
     
     fullResponse += chunkText;
@@ -134,7 +141,7 @@ for await (const chunk of streamingResult.stream) {
 }
 
 if (!fullResponse) {
-  throw new Error('Empty response from Gemini');
+  throw new Error('Empty response from Groq');
 }
 
 // Format final response with required tags if missing
@@ -318,4 +325,4 @@ socket.emit('error', {
   }
 }
 
-export default GeminiSocketHandler;
+export default GroqSocketHandler;

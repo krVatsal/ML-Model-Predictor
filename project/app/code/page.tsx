@@ -159,14 +159,14 @@ useEffect(() => {
       // Debounce the parsing to prevent too frequent updates
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        parseGeminiResponse(accumulatedResponse, true);
+        parseAIResponse(accumulatedResponse, true);
       }, 16); // Roughly 60fps
     });
   
     newSocket.on('generate-response-result', (data) => {
       console.log("hii2",data);
       setIsLoading(false);
-      parseGeminiResponse(data.response, false);
+      parseAIResponse(data.response, false);
       accumulatedResponse = ''; // Reset accumulated response
       if (data.datasets) {
         console.log("hii3",data.datasets)
@@ -193,7 +193,7 @@ useEffect(() => {
 
 
 
-  const parseGeminiResponse = async (response: string, isStreaming: boolean) => {
+  const parseAIResponse = async (response: string, isStreaming: boolean) => {
     try {
       if (typewriterRef.current) {
         clearTimeout(typewriterRef.current);
@@ -237,7 +237,7 @@ useEffect(() => {
   
       setInitiated(true);
     } catch (err) {
-      console.error('Error parsing Gemini response:', err);
+      console.error('Error parsing AI response:', err);
       toast({
         variant: "destructive",
         title: "Error",
@@ -262,7 +262,7 @@ useEffect(() => {
           
           // Parse the last complete response to restore UI state
           if (data.lastResponse) {
-            parseGeminiResponse(data.lastResponse, false);
+            parseAIResponse(data.lastResponse, false);
             console.log("hii4",data)
           }
           

@@ -1,6 +1,6 @@
 import express from 'express';
 import { isVerified } from '../middlewares/auth.js';
-import { extractKeywordsAndKaggleApiHit, genResponse, getHistory } from '../controller/gemini.controller.js';
+import { extractKeywordsAndKaggleApiHit, genResponse, getHistory } from '../controller/groq.controller.js';
 
 const router = express.Router();
 
