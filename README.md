@@ -20,7 +20,7 @@ Chanet is an AI-powered SaaS tool designed to simplify the creation of machine l
 - **API Integrations**: Kaggle API
 
 ## 🌍 Live Demo
-🔗 [Chanet Live](https://lemon-pebble-0dbc46900.1.azurestaticapps.net)
+🔗 [Chanet Live](https://chanet.vercel.app/)
 📺 [YouTube Demo](https://www.youtube.com/watch?v=BQE3FsuQeX0)
 
 

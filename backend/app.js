@@ -21,7 +21,7 @@ initSocketHandler(server);
 dbConnect();
 
 app.use(cors({
-    origin: "https://lemon-pebble-0dbc46900.1.azurestaticapps.net",
+    origin: "https://chanet.vercel.app/",
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
